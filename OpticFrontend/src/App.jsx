@@ -1,61 +1,89 @@
-import { useState } from 'react'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
+import { useConfig } from './context/ConfigContext';
+import Layout from './components/layout/Layout';
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mensaje, setMensaje] = useState('Ingrese sus credenciales');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mensaje, setMensaje] = useState('Ingresa tus credenciales');
+
+  const { reloadConfig } = useConfig();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setMensaje('Intentando conectar...');
+    console.log('🔐 [Login] Iniciando login para:', email);
 
     try {
-      // URL de tu contenedor Backend (srv-optica-v3.local / 127.0.0.2)
-      const response = await fetch('http://srv-optica-v3.local/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
 
+      console.log('📡 [Login] Respuesta del servidor:', response.status, response.statusText);
+
       if (response.ok) {
-        setMensaje('✅ ¡Acceso concedido! Bienvenido Admin.');
+        const data = await response.json();
+        console.log('✅ [Login] Login exitoso, datos:', data);
+
+        // ✅ Guardar JWT token en localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('userSchema', data.schema);
+
+        setMensaje('✅ Acceso concedido');
+        console.log('🔑 [Login] Token guardado, schema:', data.schema);
+
+        // Recargar configuración con el token
+        await reloadConfig();
+
+        console.log('🎯 [Login] Configuración recargada, mostrando dashboard');
+        setIsLoggedIn(true);
       } else {
-        const errorData = await response.json();
-        setMensaje('❌ Error: Usuario o contraseña incorrectos.');
-        console.log('Detalle del error:', errorData);
+        const errorText = await response.text();
+        console.error('❌ [Login] Error:', response.status, errorText);
+        setMensaje('❌ Usuario o contraseña incorrectos');
       }
     } catch (error) {
-      setMensaje('🚫 No se pudo conectar con el servidor.');
-      console.error('Error de red:', error);
+      console.error('🚫 [Login] Error de conexión:', error);
+      setMensaje('🚫 Error de conexión con el servidor');
     }
   };
 
-  return (
-    <div className="login-container">
-      <h1>Optic Suite v3</h1>
-      <div className="card">
-        <h3>{mensaje}</h3>
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <input
-            type="email"
-            placeholder="Email (admin@galileo.com)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit">Iniciar Sesión</button>
-        </form>
+  if (!isLoggedIn) {
+    return (
+      <div className="login-container">
+        <h1>OpticSuit V3</h1>
+        <div className="card">
+          <h3>{mensaje}</h3>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              name="email"
+              type="email"
+              placeholder="admin@opticsuit.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              name="password"
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="submit">Entrar al Sistema</button>
+          </form>
+        </div>
       </div>
-    </div>
-  )
+    );
+  }
+
+  return <Layout />;
 }
 
-export default App
+export default App;
