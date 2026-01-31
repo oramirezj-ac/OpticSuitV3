@@ -1,0 +1,181 @@
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Updated Background: Light branding wallpaper */
+  background: url('../../assets/login-bg.png');
+  background-size: cover; /* or 400px for a repeating pattern if using the seamless one */
+  background-repeat: repeat; 
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Bright Soft Overlay to ensure text readability and "lighter tone" */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.4); /* White overlay tint */
+  backdrop-filter: blur(3px); /* Subtle blur to soften the frames */
+  z-index: 0;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  /* Glassmorphism updated for Light Theme */
+  background: rgba(255, 255, 255, 0.75); 
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); /* Softer shadow */
+  z-index: 1;
+  color: #333; /* Darker text for contrast on light bg */
+  transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  /* Gradient text updated for elegance (Blue to Violet) */
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.login-header p {
+  color: #64748b; /* Slate grey */
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #475569; /* Slate 600 */
+  font-weight: 600;
+}
+
+.form-input-wrapper {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  /* Light input fields */
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cbd5e1; /* Slate 300 */
+  border-radius: 12px;
+  color: #334155;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 15px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.login-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-message {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.login-message.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.login-message.loading {
+  background: rgba(255, 255, 255, 0.5);
+  color: #64748b;
+}
+
+.loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #94a3b8;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
