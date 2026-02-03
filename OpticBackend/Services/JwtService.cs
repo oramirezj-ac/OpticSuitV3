@@ -14,15 +14,22 @@ namespace OpticBackend.Services
             _configuration = configuration;
         }
 
-        public string GenerateToken(string email, string nombreCompleto, string schema)
+        public string GenerateToken(string userId, string email, string nombreCompleto, string schema, IList<string> roles)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, userId), // ✅ VITAL: Id del usuario para Identity
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Name, nombreCompleto),
-                new Claim("tenant", schema), // ✅ CRÍTICO: Schema del usuario en el token
+                new Claim("tenant", schema),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            // Agregar roles a los claims
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
                 _configuration["Jwt:Key"] ?? "OpticSuitV3-SecretKey-ChangeInProduction-MinLength32Characters"));

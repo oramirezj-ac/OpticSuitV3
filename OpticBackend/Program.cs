@@ -74,16 +74,28 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// --- 2. SEEDING (USUARIOS MAESTROS) ---
+// --- 2. SEEDING (USUARIOS y ROLES MAESTROS) ---
 using (var scope = app.Services.CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     
-    // Usuario Admin (schema public)
-    var adminEmail = "admin@opticsuit.com"; 
-    if (userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult() == null)
+    // 1. Crear Roles si no existen
+    string[] roles = { "Root", "Admin", "Vendedor" };
+    foreach (var role in roles)
     {
-        var admin = new ApplicationUser 
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+    
+    // 2. Usuario Root (Global) - schema public
+    var adminEmail = "admin@opticsuit.com"; 
+    var rootUser = await userManager.FindByEmailAsync(adminEmail);
+    if (rootUser == null)
+    {
+        rootUser = new ApplicationUser 
         { 
             UserName = adminEmail, 
             Email = adminEmail, 
@@ -91,24 +103,33 @@ using (var scope = app.Services.CreateScope())
             NombreEsquema = "public", 
             EmailConfirmed = true 
         };
-        
-        userManager.CreateAsync(admin, "Password123!").GetAwaiter().GetResult();
+        await userManager.CreateAsync(rootUser, "Password123!");
+    }
+    // Asegurar rol Root
+    if (!await userManager.IsInRoleAsync(rootUser, "Root"))
+    {
+        await userManager.AddToRoleAsync(rootUser, "Root");
     }
     
-    // Usuario Test (schema public_test)
+    // 3. Usuario Test (Admin de Óptica) - schema public_test
     var testEmail = "test@opticsuit.com";
-    if (userManager.FindByEmailAsync(testEmail).GetAwaiter().GetResult() == null)
+    var testUser = await userManager.FindByEmailAsync(testEmail);
+    if (testUser == null)
     {
-        var testUser = new ApplicationUser 
+        testUser = new ApplicationUser 
         { 
             UserName = testEmail, 
             Email = testEmail, 
             NombreCompleto = "Usuario de Prueba",
-            NombreEsquema = "public_test", // ✅ Schema correcto
+            NombreEsquema = "public_test", 
             EmailConfirmed = true 
         };
-        
-        userManager.CreateAsync(testUser, "Password123!").GetAwaiter().GetResult();
+        await userManager.CreateAsync(testUser, "Password123!");
+    }
+    // Asegurar rol Admin
+    if (!await userManager.IsInRoleAsync(testUser, "Admin"))
+    {
+        await userManager.AddToRoleAsync(testUser, "Admin");
     }
 }
 

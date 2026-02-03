@@ -43,17 +43,22 @@ namespace OpticBackend.Controllers
                 return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
             }
 
-            // ✅ Generar JWT con tenant en claims
-            var token = _jwtService.GenerateToken(user.Email!, user.NombreCompleto, user.NombreEsquema ?? "public");
+            // ✅ Obtener roles del usuario
+            var roles = await _userManager.GetRolesAsync(user);
+
+            // ✅ Generar JWT con tenant y roles en claims
+            var token = _jwtService.GenerateToken(user.Id, user.Email!, user.NombreCompleto, user.NombreEsquema ?? "public", roles);
             
-            _logger.LogInformation("✅ Login exitoso: {Email}, Schema: {Schema}", user.Email, user.NombreEsquema);
+            _logger.LogInformation("✅ Login exitoso: {Email}, Schema: {Schema}, Roles: {Roles}", 
+                user.Email, user.NombreEsquema, string.Join(",", roles));
             
             return Ok(new
             {
                 token,
                 email = user.Email,
                 nombreCompleto = user.NombreCompleto,
-                schema = user.NombreEsquema
+                schema = user.NombreEsquema,
+                roles = roles // Devolvemos roles al front también
             });
         }
 

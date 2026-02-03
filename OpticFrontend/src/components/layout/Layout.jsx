@@ -1,13 +1,13 @@
 import { useConfig } from '../../context/ConfigContext';
 import './Layout.css';
 
-const Layout = ({ children, onLogout }) => {
+const Layout = ({ children, onLogout, activePage, onNavigate }) => {
     const { config } = useConfig();
     const userEmail = localStorage.getItem('userEmail') || 'Usuario';
+    const userRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
 
-    // Simplified admin check (in production this should check roles/claims more robustly)
-    const isAdmin = userEmail === 'admin@opticsuit.com';
-    const activePage = 'dashboard'; // Placeholder for active state logic
+    // Check if user is Root or Admin
+    const canManageUsers = userRoles.includes('Root') || userRoles.includes('Admin');
 
     return (
         <div className="layout-container">
@@ -20,30 +20,50 @@ const Layout = ({ children, onLogout }) => {
                 <nav className="sidebar-nav">
                     <ul>
                         <li>
-                            <a href="#" className={activePage === 'dashboard' ? 'active' : ''} onClick={(e) => e.preventDefault()}>
+                            <a
+                                href="#"
+                                className={activePage === 'dashboard' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}
+                            >
                                 <span className="icon">🏠</span> Dashboard
                             </a>
                         </li>
                         <li>
-                            <a href="#" onClick={(e) => e.preventDefault()}>
+                            <a
+                                href="#"
+                                className={activePage === 'patients' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('patients'); }}
+                            >
                                 <span className="icon">👥</span> Pacientes
                             </a>
                         </li>
                         <li>
-                            <a href="#" onClick={(e) => e.preventDefault()}>
+                            <a
+                                href="#"
+                                className={activePage === 'live-consultations' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('live-consultations'); }}
+                            >
                                 <span className="icon">📋</span> Consultas Live
                             </a>
                         </li>
                         <li>
-                            <a href="#" onClick={(e) => e.preventDefault()}>
+                            <a
+                                href="#"
+                                className={activePage === 'sales' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('sales'); }}
+                            >
                                 <span className="icon">🛒</span> Ventas
                             </a>
                         </li>
 
-                        {/* ✅ Solo visible para Administrador */}
-                        {isAdmin && (
+                        {/* ✅ Solo visible para Administrador (y Root) */}
+                        {canManageUsers && (
                             <li>
-                                <a href="#" onClick={(e) => e.preventDefault()}>
+                                <a
+                                    href="#"
+                                    className={activePage === 'users' ? 'active' : ''}
+                                    onClick={(e) => { e.preventDefault(); onNavigate('users'); }}
+                                >
                                     <span className="icon">⚙️</span> Usuarios
                                 </a>
                             </li>

@@ -19,7 +19,7 @@ const Login = ({ onLoginSuccess }) => {
 
     // Artificial delay for slick feel if response is too fast
     const minTime = new Promise(resolve => setTimeout(resolve, 800));
-    
+
     try {
       const fetchPromise = fetch('/api/auth/login', {
         method: 'POST',
@@ -31,20 +31,21 @@ const Login = ({ onLoginSuccess }) => {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Save to LocalStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('userEmail', data.email);
         localStorage.setItem('userSchema', data.schema);
+        localStorage.setItem('userRoles', JSON.stringify(data.roles)); // ✅ Guardar roles
 
         setStatus({ type: 'success', message: `¡Bienvenido, ${data.nombreCompleto || 'Usuario'}!` });
-        
+
         // Reload config (Theme, Settings)
         await reloadConfig();
-        
+
         // Notify Parent (App.jsx)
         setTimeout(() => {
-            onLoginSuccess();
+          onLoginSuccess();
         }, 500);
 
       } else {
@@ -107,8 +108,8 @@ const Login = ({ onLoginSuccess }) => {
 
           {status.message && (
             <div className={`login-message ${status.type}`}>
-               {status.type === 'loading' && <span className="loader"></span>}
-               {status.message}
+              {status.type === 'loading' && <span className="loader"></span>}
+              {status.message}
             </div>
           )}
         </form>
