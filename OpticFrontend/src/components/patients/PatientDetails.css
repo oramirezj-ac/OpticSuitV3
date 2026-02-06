@@ -188,3 +188,38 @@
     color: #94a3b8;
     margin-bottom: 20px;
 }
+
+/* Data Sheet Styles (New Summary) */
+.patient-data-sheet {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
+}
+
+.data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.data-item label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-item span {
+    font-size: 1.05rem;
+    color: #1e293b;
+    font-weight: 500;
+}

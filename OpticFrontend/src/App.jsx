@@ -7,6 +7,8 @@ import UserDelete from './components/users/UserDelete';
 import PatientsIndex from './components/patients/PatientsIndex';
 import PatientDelete from './components/patients/PatientDelete';
 import PatientDetails from './components/patients/PatientDetails';
+import HistoricalCapture from './components/historical/HistoricalCapture';
+import SystemCustomization from './components/admin/SystemCustomization';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -75,6 +77,10 @@ function App() {
             onNavigate={handleNavigate}
           />
         );
+      case 'historical-capture':
+        return <HistoricalCapture onNavigate={handleNavigate} />;
+      case 'customization':
+        return <SystemCustomization onNavigate={handleNavigate} />;
       case 'dashboard':
       default:
         return (

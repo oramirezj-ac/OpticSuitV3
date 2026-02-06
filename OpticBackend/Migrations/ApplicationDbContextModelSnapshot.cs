@@ -289,7 +289,7 @@ namespace OpticBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("configuracion_sistema");
+                    b.ToTable("configuracion_sistema", (string)null);
                 });
 
             modelBuilder.Entity("OpticBackend.Models.Patient", b =>
@@ -350,7 +350,7 @@ namespace OpticBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("pacientes");
+                    b.ToTable("pacientes", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

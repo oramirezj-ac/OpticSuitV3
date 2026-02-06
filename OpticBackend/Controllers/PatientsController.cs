@@ -216,20 +216,19 @@ namespace OpticBackend.Controllers
                 var normalizedAddress = model.Direccion?.Trim().ToLower();
 
                 var duplicates = await query.Where(p => 
-                    // Case 1: Name + Paterno match
-                    (p.Nombre.ToLower() == normalizedName && 
-                     p.ApellidoPaterno != null && p.ApellidoPaterno.ToLower() == normalizedPaterno)
+                    // Case 1: Strict Full Name Match (Nombre + Paterno + Materno)
+                    (
+                        p.Nombre.ToLower() == normalizedName && 
+                        p.ApellidoPaterno != null && normalizedPaterno != null && p.ApellidoPaterno.ToLower() == normalizedPaterno &&
+                        (
+                             (p.ApellidoMaterno == null && normalizedMaterno == null) || // Both null -> Match
+                             (p.ApellidoMaterno != null && normalizedMaterno != null && p.ApellidoMaterno.ToLower() == normalizedMaterno) // Both present -> Match
+                        )
+                    )
                     ||
-                    // Case 2: Phone match (Exact)
-                    (normalizedPhone != null && p.Telefono == normalizedPhone)
-                    ||
-                    // Case 3: Email match (Exact)
-                    (normalizedEmail != null && p.Email != null && p.Email.ToLower() == normalizedEmail)
-                    ||
-                    // Case 4: Surname + Address (Family member heuristic)
-                    // "pacientes compartiendo domicilio, hermanos, papas, etc"
-                    (normalizedAddress != null && p.Direccion != null && p.Direccion.ToLower() == normalizedAddress &&
-                     normalizedPaterno != null && p.ApellidoPaterno != null && p.ApellidoPaterno.ToLower() == normalizedPaterno)
+                    // Case 2: Phone match (Strict)
+                    (normalizedPhone != null && normalizedPhone.Length > 5 && p.Telefono == normalizedPhone)
+                    // Removed Email and Address heuristics to avoid false positives requested by user.
                 ).OrderByDescending(p => p.FechaRegistro).Take(10).ToListAsync();
 
                 var dtos = duplicates.Select(p => new PatientDto

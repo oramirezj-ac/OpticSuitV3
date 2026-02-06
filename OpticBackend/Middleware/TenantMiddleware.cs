@@ -19,8 +19,25 @@ namespace OpticBackend.Middleware
             if (context.User.Identity?.IsAuthenticated == true)
             {
                 var tenantClaim = context.User.FindFirst("tenant")?.Value;
-                
-                if (!string.IsNullOrEmpty(tenantClaim))
+                var rolesClaim = context.User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+                // Ojo: En Identity los roles pueden venir como "role" simple o soap xml schema role
+                var isRoot = context.User.IsInRole("Root"); 
+
+                // Si es Root y envía un header explícito para cambiar de tenant
+                if (isRoot && context.Request.Headers.TryGetValue("X-Tenant-ID", out var headerTenant))
+                {
+                    var targetTenant = headerTenant.ToString();
+                    if (!string.IsNullOrWhiteSpace(targetTenant))
+                    {
+                        tenantService.TenantId = targetTenant;
+                        _logger.LogInformation("🚀 [ROOT OVERRIDE] Cambiando contexto a Schema: {Schema}", targetTenant);
+                    }
+                    else
+                    {
+                        tenantService.TenantId = tenantClaim;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(tenantClaim))
                 {
                     tenantService.TenantId = tenantClaim;
                     _logger.LogInformation("🔵 Usuario autenticado, Schema: {Schema}", tenantClaim);

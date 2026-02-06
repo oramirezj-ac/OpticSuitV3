@@ -40,33 +40,35 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                         <li>
                             <a
                                 href="#"
-                                className={activePage === 'live-consultations' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('live-consultations'); }}
+                                className={activePage === 'historical-capture' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('historical-capture'); }}
                             >
-                                <span className="icon">📋</span> Consultas Live
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href="#"
-                                className={activePage === 'sales' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('sales'); }}
-                            >
-                                <span className="icon">🛒</span> Ventas
+                                <span className="icon">📜</span> Captura Histórica
                             </a>
                         </li>
 
                         {/* ✅ Solo visible para Administrador (y Root) */}
                         {canManageUsers && (
-                            <li>
-                                <a
-                                    href="#"
-                                    className={activePage === 'users' ? 'active' : ''}
-                                    onClick={(e) => { e.preventDefault(); onNavigate('users'); }}
-                                >
-                                    <span className="icon">⚙️</span> Usuarios
-                                </a>
-                            </li>
+                            <>
+                                <li>
+                                    <a
+                                        href="#"
+                                        className={activePage === 'users' ? 'active' : ''}
+                                        onClick={(e) => { e.preventDefault(); onNavigate('users'); }}
+                                    >
+                                        <span className="icon">⚙️</span> Usuarios
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        className={activePage === 'customization' ? 'active' : ''}
+                                        onClick={(e) => { e.preventDefault(); onNavigate('customization'); }}
+                                    >
+                                        <span className="icon">🎨</span> Personalizar
+                                    </a>
+                                </li>
+                            </>
                         )}
                     </ul>
                 </nav>
@@ -88,6 +90,19 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                 <section className="content-body">
                     {children}
                 </section>
+
+                <footer className="main-footer">
+                    {/* Debug: console.log('Footer Config:', config) */}
+                    {(config.direccion || config.Direccion || config.telefono || config.Telefono) && (
+                        <div className="footer-info">
+                            {(config.direccion || config.Direccion) && <span>📍 {config.direccion || config.Direccion}</span>}
+                            {(config.telefono || config.Telefono) && <span>📞 {config.telefono || config.Telefono}</span>}
+                        </div>
+                    )}
+                    <div className="footer-copyright">
+                        © {new Date().getFullYear()} {config.nombreOptica || config.NombreOptica || 'OpticSuit V3'}. Todos los derechos reservados.
+                    </div>
+                </footer>
             </main>
         </div>
     );

@@ -1,0 +1,236 @@
+.historical-container {
+    padding: 30px;
+    background-color: transparent; /* Let Layout background show */
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tabs (Unified Style from PatientDetails) */
+.details-tabs {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 5px;
+    font-size: 1rem;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 600;
+    position: relative;
+    top: 2px;
+    transition: color 0.2s;
+}
+
+.tab-btn.active {
+    color: var(--color-primario, #3b82f6);
+    border-bottom: 2px solid var(--color-primario, #3b82f6);
+}
+
+.tab-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Forms Container */
+.step-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 20px;
+}
+
+/* Standard Forms */
+.form-row {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 20px;       
+    margin-bottom: 20px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 200px; 
+    display: flex;
+    flex-direction: column;
+    gap: 8px; 
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600; 
+    color: #334155;
+}
+
+.form-input {
+    width: 100%; 
+    box-sizing: border-box; 
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    background-color: #ffffff;
+}
+
+.form-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-primary, .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.btn-primary:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Formula Graduacion (Compact Layout) */
+.formula-container {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 900px; 
+    margin: 0 auto;
+}
+
+.formula-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap; 
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.ojo-label {
+    font-weight: 800;
+    font-size: 1.4rem;
+    color: #1e293b;
+    width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ojo-od { color: #2563eb; } /* Azul para OD */
+.ojo-oi { color: #16a34a; } /* Verde para OI */
+
+.input-compact {
+    width: 80px;
+    padding: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.input-compact:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.simbolo {
+    font-weight: bold;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    padding: 0 2px;
+    user-select: none;
+}
+
+.add-section {
+    margin-left: auto; /* Empuja a la derecha si hay espacio */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 15px;
+    border-left: 2px solid #f1f5f9;
+}
+
+.label-mini {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Pantallas pequeñas: apilar secciones formula */
+@media (max-width: 768px) {
+    .add-section {
+        margin-left: 0;
+        border-left: none;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 10px;
+        padding-left: 0;
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .formula-row {
+        gap: 5px;
+    }
+    
+    .input-compact {
+        width: 60px;
+        font-size: 0.9rem;
+    }
+}
+
+.dp-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 8px;
+}
