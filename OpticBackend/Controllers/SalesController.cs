@@ -5,6 +5,7 @@ using OpticBackend.Data;
 using OpticBackend.Dtos.Sales;
 using OpticBackend.Models;
 using System.Text.Json;
+using OpticBackend.Constants;
 
 namespace OpticBackend.Controllers
 {
@@ -39,7 +40,7 @@ namespace OpticBackend.Controllers
                     SaldoPendiente = model.SaldoPendiente, // Or calculate: Total - Sum(Payments)
                     ObservacionesGenerales = model.ObservacionesGenerales,
                     UsuarioId = !string.IsNullOrEmpty(model.UsuarioId) ? model.UsuarioId : null,
-                    Estado = "Activa"
+                    Estado = SaleConstants.StatusActive
                 };
 
                 if (sale.Fecha.HasValue && sale.Fecha.Value.Kind == DateTimeKind.Unspecified)

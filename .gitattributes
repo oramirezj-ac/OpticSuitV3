@@ -1,0 +1,21 @@
+* text=auto
+
+# C# files
+*.cs text diff=csharp
+*.csproj text merge=union
+
+# Web files
+*.js text
+*.jsx text
+*.css text
+*.html text
+*.json text
+
+# Config
+*.config text
+*.xml text
+*.yml text
+*.yaml text
+
+# SQL
+*.sql text
