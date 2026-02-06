@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
+import { formatDateLong } from '../../../utils/dateUtils';
 
 const Step4_Sale = () => {
     const {
@@ -277,7 +278,7 @@ const Step4_Sale = () => {
                         <tbody>
                             {paymentList.map(p => (
                                 <tr key={p.id}>
-                                    <td>{new Date(p.fecha).toLocaleDateString()}</td>
+                                    <td>{formatDateLong(p.fecha)}</td>
                                     <td>{p.metodo}</td>
                                     <td>${p.monto.toFixed(2)}</td>
                                     <td style={{ textAlign: 'right' }}>

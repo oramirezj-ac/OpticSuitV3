@@ -7,14 +7,18 @@ using OpticBackend.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using OpticBackend.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. CONFIGURACIÓN DE SERVICIOS ---
 
 // Registrar servicios
+
+
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<ISalesService, SalesService>(); // Register SalesService
 builder.Services.AddHttpContextAccessor(); // ✅ Necesario para TenantInterceptor
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>

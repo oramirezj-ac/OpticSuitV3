@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
 import DeleteConfirmation from '../../common/DeleteConfirmation';
+import { formatDateLong } from '../../../utils/dateUtils';
 
 const Step2_Consultation = () => {
     const {
@@ -67,10 +68,6 @@ const Step2_Consultation = () => {
             }
         } catch (error) {
             console.error("Error deleting consultation", error);
-            // Optional: set some error state to show inside modal or alert?
-            // DeleteConfirmation handles errors if we throw, but we want to close if successful?
-            // Actually DeleteConfirmation usually takes onConfirm promise.
-            // Let's re-throw so modal can show error?
             throw error;
         }
     };
@@ -130,7 +127,7 @@ const Step2_Consultation = () => {
                                 <tbody>
                                     {existingConsultations.map(c => (
                                         <tr key={c.id}>
-                                            <td style={{ padding: '5px' }}>{new Date(c.fecha).toLocaleDateString()}</td>
+                                            <td style={{ padding: '5px' }}>{formatDateLong(c.fecha)}</td>
                                             <td style={{ padding: '5px' }}>{c.motivoConsulta}</td>
                                             <td style={{ padding: '5px', display: 'flex', gap: '5px' }}>
                                                 <button
@@ -164,7 +161,7 @@ const Step2_Consultation = () => {
                     <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
                         <DeleteConfirmation
                             title="¿Eliminar Consulta?"
-                            itemName={`Consulta del ${new Date(deleteTarget.fecha).toLocaleDateString()}`}
+                            itemName={`Consulta del ${formatDateLong(deleteTarget.fecha)}`}
                             onConfirm={executeDelete}
                             onCancel={() => setDeleteTarget(null)}
                             warningText="Solo debe eliminar consultas que no tengan ventas asociadas o hayan sido creadas por error."

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HistoricalPatientForm from '../HistoricalPatientForm';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
+import { formatDateLong } from '../../../utils/dateUtils';
 
 const Step1_Patient = () => {
     const { setCapturedData, setConsultationForm, setCurrentStep } = useHistoricalCapture();
@@ -71,7 +72,7 @@ const Step1_Patient = () => {
                                         <td>
                                             <strong>{p.nombre} {p.apellidoPaterno} {p.apellidoMaterno}</strong>
                                         </td>
-                                        <td>{new Date(p.fechaRegistro).toLocaleDateString()}</td>
+                                        <td>{formatDateLong(p.fechaRegistro)}</td>
                                         <td>{p.telefono || '-'}</td>
                                         <td>
                                             <button
