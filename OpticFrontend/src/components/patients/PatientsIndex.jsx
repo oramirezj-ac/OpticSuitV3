@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PatientForm from './PatientForm';
 import './PatientsIndex.css';
 import './../users/UsersIndex.css'; // Reusing generic table styles
+import { formatPhoneNumber } from '../../utils/formatUtils';
 
 const PatientsIndex = ({ onNavigate }) => {
     // Tab State: 'recent', 'search', 'all'
@@ -271,7 +272,7 @@ const PatientsIndex = ({ onNavigate }) => {
                                             <td style={{ fontWeight: '500' }}>
                                                 {`${patient.nombre} ${patient.apellidoPaterno || ''} ${patient.apellidoMaterno || ''}`.trim()}
                                             </td>
-                                            <td>{patient.telefono || '-'}</td>
+                                            <td>{formatPhoneNumber(patient.telefono) || '-'}</td>
                                             <td>{patient.edad ? `${patient.edad} años` : '-'}</td>
                                             <td>
                                                 <button

@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
+import { formatPhoneNumber } from '../../../utils/formatUtils';
 
 const PatientHeader = ({ patient, onBack }) => {
     const isPresbyopicRisk = patient.edad && patient.edad >= 40;
@@ -23,7 +24,7 @@ const PatientHeader = ({ patient, onBack }) => {
             <div className="patient-quick-info">
                 <div className="info-item">
                     <span className="label">Teléfono:</span>
-                    <span className="value">{patient.telefono || '-'}</span>
+                    <span className="value">{formatPhoneNumber(patient.telefono) || '-'}</span>
                 </div>
                 <div className="info-item">
                     <span className="label">Fecha Registro:</span>

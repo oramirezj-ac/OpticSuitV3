@@ -388,6 +388,24 @@ a:hover {
 }
 .badge-light:hover { background: var(--slate-200); }
 
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid color-mix(in srgb, var(--success), transparent 70%);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid color-mix(in srgb, var(--warning), transparent 70%);
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid color-mix(in srgb, var(--danger), transparent 70%);
+}
+
 
 /* Text Utilities */
 .text-xs { font-size: 0.75rem; }

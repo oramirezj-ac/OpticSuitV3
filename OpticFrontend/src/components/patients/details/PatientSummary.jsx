@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPhoneNumber } from '../../../utils/formatUtils';
 
 const PatientSummary = ({ patient }) => {
     return (
@@ -23,7 +24,7 @@ const PatientSummary = ({ patient }) => {
                     {patient.telefono && (
                         <div className="data-item">
                             <label>Teléfono</label>
-                            <span>{patient.telefono}</span>
+                            <span>{formatPhoneNumber(patient.telefono)}</span>
                         </div>
                     )}
                     {patient.email && (
