@@ -86,17 +86,44 @@ namespace OpticBackend.Controllers
             });
         }
         // PUT: api/configuracion
+        // PUT: api/configuracion
         [HttpPut]
         [Authorize(Roles = "Root,Admin")] // Solo admins pueden cambiar diseño
         public async Task<ActionResult<ConfiguracionSistema>> UpdateConfiguracion(ConfiguracionSistema model)
         {
-            var config = await _context.Configuraciones.FirstOrDefaultAsync();
+            ConfiguracionSistema? config = null;
 
+            // 1. Intentar encontrar por ID si se proporciona (prioridad al ID enviado por frontend)
+            if (model.Id != Guid.Empty)
+            {
+                config = await _context.Configuraciones.FindAsync(model.Id);
+                if (config == null)
+                {
+                     _logger.LogWarning("⚠️ Se proporcionó ID {Id} pero no se encontró en la BD. Buscando configuración existente...", model.Id);
+                }
+            }
+
+            // 2. Fallback: Buscar la primera configuración existente (para evitar duplicados)
             if (config == null)
             {
-                // Create if not exists
+                var configs = await _context.Configuraciones.ToListAsync();
+                if (configs.Count > 1)
+                {
+                    _logger.LogWarning("⚠️ Se encontraron múltiples configuraciones. Usando la primera.");
+                }
+                config = configs.FirstOrDefault();
+            }
+
+            // 3. Si aún es null, crear nueva
+            if (config == null)
+            {
+                _logger.LogInformation("✨ Creando NUEVA configuración (no existían datos previos).");
                 config = new ConfiguracionSistema();
                 _context.Configuraciones.Add(config);
+            }
+            else
+            {
+                 _logger.LogInformation("✏️ Actualizando configuración EXISTENTE {Id}.", config.Id);
             }
 
             // Update fields manually to avoid overwriting ID or restricted fields if any

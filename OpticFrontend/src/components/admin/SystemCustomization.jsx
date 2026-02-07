@@ -4,6 +4,7 @@ import { useConfig } from '../../context/ConfigContext';
 const SystemCustomization = ({ onNavigate }) => {
     const { config, reloadConfig } = useConfig();
     const [formData, setFormData] = useState({
+        id: null,
         nombreOptica: '',
         eslogan: '',
         colorPrimario: '#007bff',
@@ -86,6 +87,7 @@ const SystemCustomization = ({ onNavigate }) => {
     const populateForm = (data) => {
         setFormData(prev => ({
             ...prev,
+            id: data.id || null,
             nombreOptica: data.nombreOptica || '',
             eslogan: data.eslogan || '',
             colorPrimario: data.colorPrimario || '#007bff',
@@ -116,10 +118,16 @@ const SystemCustomization = ({ onNavigate }) => {
                 headers['X-Tenant-ID'] = targetTenant;
             }
 
+            // Prepare payload - remove ID if null/empty to avoid 400 Bad Request
+            const payload = { ...formData };
+            if (!payload.id) {
+                delete payload.id;
+            }
+
             const response = await fetch('/api/configuracion', {
                 method: 'PUT',
                 headers: headers,
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
