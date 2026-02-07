@@ -38,15 +38,21 @@ export const formatPhoneNumber = (phoneNumber) => {
 };
 
 /**
- * Format a currency value to string with $ symbol and 2 decimals.
+ * Format a currency value to string with $ symbol and NO decimals by default (integer).
+ * e.g. 1200 -> "$ 1,200"
+ * 
  * @param {number|string} amount 
- * @returns {string} e.g. "$1,234.56"
+ * @param {boolean} withDecimals - If true, forces 2 decimal places. Default false.
+ * @returns {string} 
  */
-export const formatCurrency = (amount) => {
+export const formatCurrency = (amount, withDecimals = false) => {
     const num = parseFloat(amount);
-    if (isNaN(num)) return '$0.00';
+    if (isNaN(num)) return '$ 0';
+
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',
-        currency: 'MXN'
+        currency: 'MXN',
+        minimumFractionDigits: withDecimals ? 2 : 0,
+        maximumFractionDigits: withDecimals ? 2 : 0
     }).format(num);
 };

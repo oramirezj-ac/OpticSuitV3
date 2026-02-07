@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
 import { formatDateLong } from '../../../utils/dateUtils';
+import { formatCurrency } from '../../../utils/formatUtils';
 
 const Step4_Sale = () => {
     const {
@@ -279,7 +280,7 @@ const Step4_Sale = () => {
                                     <tr key={p.id} className="border-b border-slate-100 hover:bg-white">
                                         <td className="p-2">{formatDateLong(p.fecha)}</td>
                                         <td className="p-2">{p.metodo}</td>
-                                        <td className="p-2 font-medium">${p.monto.toFixed(2)}</td>
+                                        <td className="p-2 font-medium">{formatCurrency(p.monto)}</td>
                                         <td className="p-2 text-right">
                                             <button
                                                 type="button"
@@ -296,7 +297,7 @@ const Step4_Sale = () => {
                             <tfoot>
                                 <tr className="border-t-2 border-slate-300 font-bold">
                                     <td colSpan="2" className="p-2 text-right">Total Pagado:</td>
-                                    <td className="p-2">${totalPagado.toFixed(2)}</td>
+                                    <td className="p-2">{formatCurrency(totalPagado)}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -310,7 +311,7 @@ const Step4_Sale = () => {
                     <span
                         className={`text-2xl font-bold ${(parseFloat(saleForm.total_venta || 0) - totalPagado) <= 0.01 ? 'text-success' : 'text-danger'}`}
                     >
-                        ${(parseFloat(saleForm.total_venta || 0) - totalPagado).toFixed(2)}
+                        {formatCurrency(parseFloat(saleForm.total_venta || 0) - totalPagado)}
                     </span>
                 </div>
                 {(parseFloat(saleForm.total_venta || 0) - totalPagado) <= 0.01 && (
