@@ -104,42 +104,42 @@ const Step2_Consultation = () => {
     };
 
     return (
-        <div className="step-consultation">
+        <div className="step-consultation fade-in">
             <h3>Paso 2: Datos de la Consulta</h3>
 
             {/* EXISTING CONSULTATIONS PANEL */}
             {existingConsultations.length > 0 && (
-                <div className="existing-consultations-panel" style={{ marginBottom: '25px', padding: '15px', background: '#f1f5f9', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '1em', color: '#475569' }}>📂 Consultas Existentes Detectadas</h4>
-                    <p style={{ fontSize: '0.9em', color: '#64748b' }}>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                    <h4 className="flex items-center gap-2 mb-2 text-slate-700 font-semibold text-sm">
+                        <span>📂</span> Consultas Existentes Detectadas
+                    </h4>
+                    <p className="text-sm text-muted mb-4">
                         Este paciente ya tiene consultas registradas. Si desea continuar una captura incompleta, seleccione una de la lista:
                     </p>
-                    <div className="table-responsive" style={{ maxHeight: '150px', overflowY: 'auto', marginTop: '10px' }}>
-                        {loadingExisting ? <div>Cargando...</div> : (
-                            <table className="table-mini" style={{ width: '100%', fontSize: '0.9em', background: '#fff' }}>
-                                <thead>
-                                    <tr style={{ background: '#e2e8f0' }}>
-                                        <th style={{ padding: '5px' }}>Fecha</th>
-                                        <th style={{ padding: '5px' }}>Motivo</th>
-                                        <th style={{ padding: '5px' }}>Acción</th>
+                    <div className="overflow-y-auto max-h-40 border border-slate-200 rounded-md bg-white">
+                        {loadingExisting ? <div className="p-4 text-center text-sm text-muted">Cargando...</div> : (
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-100 sticky top-0">
+                                    <tr className="text-left text-slate-600 font-semibold">
+                                        <th className="p-2 border-b">Fecha</th>
+                                        <th className="p-2 border-b">Motivo</th>
+                                        <th className="p-2 border-b text-right">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {existingConsultations.map(c => (
-                                        <tr key={c.id}>
-                                            <td style={{ padding: '5px' }}>{formatDateLong(c.fecha)}</td>
-                                            <td style={{ padding: '5px' }}>{c.motivoConsulta}</td>
-                                            <td style={{ padding: '5px', display: 'flex', gap: '5px' }}>
+                                        <tr key={c.id} className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+                                            <td className="p-2 text-slate-700">{formatDateLong(c.fecha)}</td>
+                                            <td className="p-2 text-slate-700">{c.motivoConsulta}</td>
+                                            <td className="p-2 flex gap-2 justify-end">
                                                 <button
-                                                    className="btn-sm btn-outline-primary"
-                                                    style={{ padding: '2px 8px', fontSize: '0.85em' }}
+                                                    className="btn btn-secondary text-xs py-1 px-2 h-auto"
                                                     onClick={() => handleSelectExisting(c)}
                                                 >
                                                     Usar esta ➜
                                                 </button>
                                                 <button
-                                                    className="btn-sm btn-outline-danger"
-                                                    style={{ padding: '2px 8px', fontSize: '0.85em', color: 'red', borderColor: 'red' }}
+                                                    className="btn btn-ghost text-danger text-xs py-1 px-2 h-auto"
                                                     onClick={() => confirmDelete(c)}
                                                     title="Eliminar consulta vacía/errónea"
                                                 >
@@ -157,8 +157,8 @@ const Step2_Consultation = () => {
 
             {/* DELETE MODAL */}
             {deleteTarget && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-                    <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 animate-fade-in">
                         <DeleteConfirmation
                             title="¿Eliminar Consulta?"
                             itemName={`Consulta del ${formatDateLong(deleteTarget.fecha)}`}
@@ -174,13 +174,13 @@ const Step2_Consultation = () => {
                 </div>
             )}
 
-            <div className="form-title-separator" style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#94a3b8' }}>
-                <span style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></span>
-                <span style={{ padding: '0 10px', fontSize: '0.9em', fontWeight: 'bold' }}>O REGISTRE UNA NUEVA</span>
-                <span style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></span>
+            <div className="flex items-center gap-4 my-8 text-slate-400 font-medium text-xs tracking-widest uppercase">
+                <span className="flex-1 h-px bg-slate-200"></span>
+                <span>O registre una nueva</span>
+                <span className="flex-1 h-px bg-slate-200"></span>
             </div>
 
-            <div className="form-row">
+            <div className="grid-cols-2 mb-6">
                 <div className="form-group">
                     <label>Fecha de la Nota</label>
                     <input
@@ -199,12 +199,13 @@ const Step2_Consultation = () => {
                         className="form-input"
                         value={consultationForm.motivo}
                         onChange={handleConChange}
+                        placeholder="Ej. Revisión general, Lentes rotos..."
                     />
                 </div>
             </div>
             <div className="form-actions">
-                <button className="btn-secondary" onClick={prevStep}>Atrás</button>
-                <button className="btn-primary" onClick={handleSaveConsultation} disabled={loading}>
+                <button className="btn btn-secondary" onClick={prevStep}>Atrás</button>
+                <button className="btn btn-primary" onClick={handleSaveConsultation} disabled={loading}>
                     {loading ? 'Guardando...' : 'Guardar Nueva y Continuar →'}
                 </button>
             </div>

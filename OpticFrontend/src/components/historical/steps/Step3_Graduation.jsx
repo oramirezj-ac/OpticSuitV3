@@ -99,23 +99,32 @@ const Step3_Graduation = () => {
     };
 
     return (
-        <div className="step-graduation">
+        <div className="step-graduation fade-in">
             <h3>Paso 3: Graduación (Receta)</h3>
 
             {/* EXISTING GRADUATIONS SELECTOR */}
             {existingGraduations.length > 0 && (
-                <div className="existing-panel mb-4 p-3 bg-slate-50 border rounded-lg">
-                    <h4 className="text-sm font-bold text-slate-600 mb-2">🕶️ Graduaciones encontradas en esta consulta:</h4>
-                    <div className="grid gap-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                    <h4 className="text-sm font-bold text-slate-600 mb-4 flex items-center gap-2">
+                        <span>🕶️</span> Graduaciones encontradas en esta consulta:
+                    </h4>
+                    <div className="grid gap-3">
                         {existingGraduations.map(g => (
-                            <div key={g.id} className="flex items-center justify-between bg-white p-2 border rounded shadow-sm">
-                                <div className="text-xs">
-                                    <strong>OD:</strong> {g.odEsfera}/{g.odCilindro}x{g.odEje}°
-                                    <span className="mx-2">|</span>
-                                    <strong>OI:</strong> {g.oiEsfera}/{g.oiCilindro}x{g.oiEje}°
+                            <div key={g.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-3 border border-slate-200 rounded-md shadow-sm gap-2">
+                                <div className="text-sm">
+                                    <div className="flex gap-4">
+                                        <span className="text-slate-800"><strong className="text-blue-600">OD:</strong> {g.odEsfera} / {g.odCilindro} x {g.odEje}°</span>
+                                        <span className="text-slate-300">|</span>
+                                        <span className="text-slate-800"><strong className="text-green-600">OI:</strong> {g.oiEsfera} / {g.oiCilindro} x {g.oiEje}°</span>
+                                    </div>
+                                    {(g.odAdicion || g.oiAdicion) && (
+                                        <div className="text-xs text-muted mt-1">
+                                            ADD OD: {g.odAdicion || '-'} | ADD OI: {g.oiAdicion || '-'}
+                                        </div>
+                                    )}
                                 </div>
                                 <button
-                                    className="btn-sm btn-outline-primary"
+                                    className="btn btn-secondary text-xs py-1 px-3 self-end sm:self-auto"
                                     onClick={() => handleSelectExistingGraduation(g)}
                                 >
                                     Usar esta ➜
@@ -126,16 +135,16 @@ const Step3_Graduation = () => {
                 </div>
             )}
 
-            <div className="form-title-separator" style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#94a3b8' }}>
-                <span style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></span>
-                <span style={{ padding: '0 10px', fontSize: '0.9em', fontWeight: 'bold' }}>O CAPTURE UNA NUEVA</span>
-                <span style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></span>
+            <div className="flex items-center gap-4 my-8 text-slate-400 font-medium text-xs tracking-widest uppercase">
+                <span className="flex-1 h-px bg-slate-200"></span>
+                <span>O capture una nueva</span>
+                <span className="flex-1 h-px bg-slate-200"></span>
             </div>
 
             <div className="formula-container">
                 {/* OJO DERECHO */}
                 <div className="formula-row">
-                    <div className="ojo-label ojo-od">OD</div>
+                    <div className="ojo-label ojo-od text-2xl font-bold" style={{ color: '#2563eb' }}>OD</div>
 
                     <DiopterInput
                         name="od_esfera"
@@ -144,7 +153,7 @@ const Step3_Graduation = () => {
                         min={-20} max={20}
                         placeholder="Esfera"
                     />
-                    <span className="simbolo">=</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">=</span>
 
                     <DiopterInput
                         name="od_cilindro"
@@ -154,7 +163,7 @@ const Step3_Graduation = () => {
                         placeholder="Cil"
                         isCylinder={true}
                     />
-                    <span className="simbolo">x</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">x</span>
 
                     <DiopterInput
                         name="od_eje"
@@ -164,11 +173,11 @@ const Step3_Graduation = () => {
                         placeholder="Eje"
                         isAxis={true}
                     />
-                    <span className="simbolo">°</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">°</span>
 
                     {/* ADD group */}
-                    <div className="add-section">
-                        <span className="label-mini">ADD</span>
+                    <div className="add-section border-l pl-4 ml-auto border-slate-200 flex items-center gap-2">
+                        <span className="label-mini text-xs font-bold text-muted uppercase tracking-wider">ADD</span>
                         <DiopterInput
                             name="od_adicion"
                             value={graduationForm.od_adicion}
@@ -181,7 +190,7 @@ const Step3_Graduation = () => {
 
                 {/* OJO IZQUIERDO */}
                 <div className="formula-row">
-                    <div className="ojo-label ojo-oi">OI</div>
+                    <div className="ojo-label ojo-oi text-2xl font-bold" style={{ color: '#16a34a' }}>OI</div>
 
                     <DiopterInput
                         name="oi_esfera"
@@ -190,7 +199,7 @@ const Step3_Graduation = () => {
                         min={-20} max={20}
                         placeholder="Esfera"
                     />
-                    <span className="simbolo">=</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">=</span>
 
                     <DiopterInput
                         name="oi_cilindro"
@@ -200,7 +209,7 @@ const Step3_Graduation = () => {
                         placeholder="Cil"
                         isCylinder={true}
                     />
-                    <span className="simbolo">x</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">x</span>
 
                     <DiopterInput
                         name="oi_eje"
@@ -210,10 +219,10 @@ const Step3_Graduation = () => {
                         placeholder="Eje"
                         isAxis={true}
                     />
-                    <span className="simbolo">°</span>
+                    <span className="simbolo text-slate-400 text-lg font-bold px-1 select-none">°</span>
 
-                    <div className="add-section">
-                        <span className="label-mini">ADD</span>
+                    <div className="add-section border-l pl-4 ml-auto border-slate-200 flex items-center gap-2">
+                        <span className="label-mini text-xs font-bold text-muted uppercase tracking-wider">ADD</span>
                         <DiopterInput
                             name="oi_adicion"
                             value={graduationForm.oi_adicion}
@@ -226,22 +235,22 @@ const Step3_Graduation = () => {
             </div>
 
             {/* DP Section */}
-            <div className="dp-container">
-                <label style={{ fontWeight: 'bold', color: '#475569' }}>Distancia Pupilar (DP):</label>
+            <div className="dp-container bg-slate-100 p-4 rounded-lg mt-6 flex justify-center items-center gap-4 border border-slate-200">
+                <label className="font-bold text-slate-600">Distancia Pupilar (DP):</label>
                 <input
                     type="text"
                     name="dp"
                     value={graduationForm.dp}
                     onChange={handleGradChange}
-                    className="form-input"
+                    className="form-input text-center font-bold text-lg"
                     placeholder="mm"
-                    style={{ maxWidth: '120px', textAlign: 'center' }}
+                    style={{ maxWidth: '120px' }}
                 />
             </div>
 
             <div className="form-actions">
-                <button className="btn-secondary" onClick={prevStep}>Atrás</button>
-                <button className="btn-primary" onClick={handleSaveGraduation} disabled={loading}>
+                <button className="btn btn-secondary" onClick={prevStep}>Atrás</button>
+                <button className="btn btn-primary" onClick={handleSaveGraduation} disabled={loading}>
                     {loading ? 'Guardando...' : 'Guardar y Continuar →'}
                 </button>
             </div>

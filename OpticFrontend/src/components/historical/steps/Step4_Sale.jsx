@@ -140,14 +140,15 @@ const Step4_Sale = () => {
     const handleSaleChange = (e) => setSaleForm({ ...saleForm, [e.target.name]: e.target.value });
 
     return (
-        <div className="step-sale">
+        <div className="step-sale fade-in">
             <h3>Paso 4: Datos de Venta</h3>
-            <div className="alert alert-info" style={{ fontSize: '0.9em' }}>
-                ℹ️ Capture el historial financiero. Seleccione el vendedor responsable.
+            <div className="alert alert-info flex items-center gap-2">
+                <span className="text-xl">ℹ️</span>
+                <span>Capture el historial financiero. Seleccione el vendedor responsable.</span>
             </div>
 
             {/* SALES HEADER INFO */}
-            <div className="form-row">
+            <div className="grid-cols-3 mb-4">
                 <div className="form-group">
                     <label>Folio Físico (Nota)</label>
                     <input
@@ -173,10 +174,10 @@ const Step4_Sale = () => {
                     <label>Vendedor (Responsable)</label>
                     <select
                         name="usuarioId"
-                        className="form-input"
+                        className="form-select"
                         value={saleForm.usuarioId}
                         onChange={handleSaleChange}
-                        style={{ borderLeft: '4px solid #3b82f6' }}
+                        style={{ borderLeft: '4px solid var(--color-primario)' }}
                     >
                         <option value="">-- Seleccione Vendedor --</option>
                         {sellers.map(s => (
@@ -187,17 +188,16 @@ const Step4_Sale = () => {
             </div>
 
             {/* PRODUCT DESCRIPTION + KEYWORDS */}
-            <div className="product-section" style={{ marginBottom: '20px' }}>
+            <div className="mb-4">
                 <div className="form-group">
                     <label>Total Venta ($)</label>
                     <input
                         type="number"
                         name="total_venta"
-                        className="form-input"
+                        className="form-input text-xl font-bold"
                         value={saleForm.total_venta}
                         onChange={handleSaleChange}
                         placeholder="0.00"
-                        style={{ fontWeight: 'bold', fontSize: '1.2em', color: '#0f172a' }}
                     />
                 </div>
 
@@ -205,23 +205,20 @@ const Step4_Sale = () => {
                     <label>Descripción del Producto / Tratamientos</label>
                     <textarea
                         name="observaciones"
-                        className="form-input"
+                        className="form-textarea"
                         rows="3"
                         value={saleForm.observaciones}
                         onChange={handleSaleChange}
                         placeholder="Especifique armazón, micas, tratamientos..."
                     />
-                    <div className="keywords-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
+                    <div className="flex flex-wrap gap-2 mt-2">
                         {PRODUCT_KEYWORDS.map(kw => (
                             <button
                                 key={kw}
                                 type="button"
                                 onClick={() => insertKeyword(kw)}
-                                className="badge-keyword"
-                                style={{
-                                    background: '#e2e8f0', border: 'none', borderRadius: '12px',
-                                    padding: '4px 10px', fontSize: '0.8em', cursor: 'pointer', color: '#475569'
-                                }}
+                                className="badge badge-light"
+                                style={{ border: 'none', cursor: 'pointer' }}
                             >
                                 + {kw}
                             </button>
@@ -231,97 +228,99 @@ const Step4_Sale = () => {
             </div>
 
             {/* PAYMENTS CRUD PANEL */}
-            <div className="payments-panel" style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <h4 style={{ fontSize: '1em', marginBottom: '10px', borderBottom: '1px solid #cbd5e1', paddingBottom: '5px' }}>
-                    💳 Historial de Pagos / Abonos
+            <div className="card" style={{ backgroundColor: 'var(--slate-50)', border: '1px solid var(--slate-200)', padding: 'var(--spacing-md)' }}>
+                <h4 className="text-lg font-semibold border-b border-slate-300 pb-2 mb-4 flex items-center gap-2">
+                    <span>💳</span> Historial de Pagos / Abonos
                 </h4>
 
                 {/* ADD PAYMENT FORM */}
-                <div className="add-payment-form" style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '15px' }}>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8em' }}>Fecha Pago</label>
-                        <input type="date" name="fecha" className="form-input-sm" value={currentPayment.fecha} onChange={handlePaymentChange} />
+                <div className="grid-cols-4 items-end mb-4">
+                    <div className="form-group">
+                        <label className="text-sm">Fecha Pago</label>
+                        <input type="date" name="fecha" className="form-input text-sm" value={currentPayment.fecha} onChange={handlePaymentChange} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8em' }}>Monto ($)</label>
-                        <input type="number" name="monto" className="form-input-sm" value={currentPayment.monto} onChange={handlePaymentChange} placeholder="0.00" />
+                    <div className="form-group">
+                        <label className="text-sm">Monto ($)</label>
+                        <input type="number" name="monto" className="form-input text-sm" value={currentPayment.monto} onChange={handlePaymentChange} placeholder="0.00" />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8em' }}>Método</label>
-                        <select name="metodo" className="form-input-sm" value={currentPayment.metodo} onChange={handlePaymentChange}>
+                    <div className="form-group">
+                        <label className="text-sm">Método</label>
+                        <select name="metodo" className="form-select text-sm" value={currentPayment.metodo} onChange={handlePaymentChange}>
                             <option value="Efectivo">Efectivo</option>
                             <option value="Tarjeta">Tarjeta</option>
                             <option value="Transferencia">Transferencia</option>
                         </select>
                     </div>
-                    <button
-                        type="button"
-                        onClick={addPayment}
-                        className="btn-add-payment"
-                        style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer' }}
-                    >
-                        + Agregar
-                    </button>
+                    <div className="form-group">
+                        <button
+                            type="button"
+                            onClick={addPayment}
+                            className="btn btn-success w-full text-sm"
+                        >
+                            + Agregar
+                        </button>
+                    </div>
                 </div>
 
                 {/* PAYMENTS LIST TABLE */}
                 {paymentList.length > 0 && (
-                    <table className="table-mini" style={{ width: '100%', fontSize: '0.9em', marginBottom: '10px' }}>
-                        <thead>
-                            <tr style={{ background: '#e2e8f0' }}>
-                                <th>Fecha</th>
-                                <th>Método</th>
-                                <th>Monto</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paymentList.map(p => (
-                                <tr key={p.id}>
-                                    <td>{formatDateLong(p.fecha)}</td>
-                                    <td>{p.metodo}</td>
-                                    <td>${p.monto.toFixed(2)}</td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => removePayment(p.id)}
-                                            style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                        >
-                                            🗑️
-                                        </button>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm mb-4" style={{ borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr className="bg-slate-100 border-b border-slate-200 text-left">
+                                    <th className="p-2 font-semibold text-muted">Fecha</th>
+                                    <th className="p-2 font-semibold text-muted">Método</th>
+                                    <th className="p-2 font-semibold text-muted">Monto</th>
+                                    <th className="p-2"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr style={{ borderTop: '2px solid #cbd5e1', fontWeight: 'bold' }}>
-                                <td colSpan="2" style={{ textAlign: 'right' }}>Total Pagado:</td>
-                                <td>${totalPagado.toFixed(2)}</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {paymentList.map(p => (
+                                    <tr key={p.id} className="border-b border-slate-100 hover:bg-white">
+                                        <td className="p-2">{formatDateLong(p.fecha)}</td>
+                                        <td className="p-2">{p.metodo}</td>
+                                        <td className="p-2 font-medium">${p.monto.toFixed(2)}</td>
+                                        <td className="p-2 text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() => removePayment(p.id)}
+                                                className="btn-ghost text-danger p-1 rounded"
+                                                title="Eliminar pago"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="border-t-2 border-slate-300 font-bold">
+                                    <td colSpan="2" className="p-2 text-right">Total Pagado:</td>
+                                    <td className="p-2">${totalPagado.toFixed(2)}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 )}
 
                 {/* BALANCE DISPLAY */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #cbd5e1' }}>
-                    <span style={{ color: '#64748b', marginRight: '10px' }}>Saldo Pendiente:</span>
-                    <span style={{
-                        fontSize: '1.4em',
-                        fontWeight: 'bold',
-                        color: (parseFloat(saleForm.total_venta || 0) - totalPagado) <= 0.01 ? 'green' : '#e11d48'
-                    }}>
+                <div className="flex justify-end items-center mt-4 pt-4 border-t border-dashed border-slate-300">
+                    <span className="text-muted mr-4">Saldo Pendiente:</span>
+                    <span
+                        className={`text-2xl font-bold ${(parseFloat(saleForm.total_venta || 0) - totalPagado) <= 0.01 ? 'text-success' : 'text-danger'}`}
+                    >
                         ${(parseFloat(saleForm.total_venta || 0) - totalPagado).toFixed(2)}
                     </span>
                 </div>
                 {(parseFloat(saleForm.total_venta || 0) - totalPagado) <= 0.01 && (
-                    <div style={{ textAlign: 'right', color: 'green', fontWeight: 'bold', fontSize: '0.8em' }}>✨ NOTA PAGADA</div>
+                    <div className="text-right text-success font-bold text-sm mt-1">✨ NOTA PAGADA</div>
                 )}
             </div>
 
             <div className="form-actions">
-                <button className="btn-secondary" onClick={prevStep}>Atrás</button>
-                <button className="btn-primary" onClick={handleSaveSale} disabled={loading}>
+                <button className="btn btn-secondary" onClick={prevStep}>Atrás</button>
+                <button className="btn btn-primary" onClick={handleSaveSale} disabled={loading}>
                     {loading ? 'Procesando...' : 'Finalizar y Guardar Nota'}
                 </button>
             </div>

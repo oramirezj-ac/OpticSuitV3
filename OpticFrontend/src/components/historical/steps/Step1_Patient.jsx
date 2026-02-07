@@ -42,41 +42,47 @@ const Step1_Patient = () => {
     };
 
     return (
-        <div className="step-patient">
+        <div className="step-patient fade-in">
             <h3>Paso 1: Identificar Paciente</h3>
-            <div className="form-container" style={{ background: '#fff', padding: '0' }}>
+            <div className="card border-0 shadow-none p-0 mb-8">
                 <HistoricalPatientForm onPatientSelected={handlePatientSuccess} />
             </div>
 
             {/* RECENT PATIENTS SHORTCUT */}
-            <div className="recent-patients-panel" style={{ marginTop: '30px', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-                <h4>🕒 Pacientes Recientes</h4>
-                <p style={{ color: '#64748b', fontSize: '0.9em' }}>Seleccione uno de los últimos pacientes registrados para agilizar la captura:</p>
+            <div className="mt-8 pt-6 border-t border-slate-200">
+                <h4 className="flex items-center gap-2 mb-2">
+                    <span>🕒</span> Pacientes Recientes
+                </h4>
+                <p className="text-muted text-sm mb-4">
+                    Seleccione uno de los últimos pacientes registrados para agilizar la captura:
+                </p>
 
-                <div className="table-responsive" style={{ marginTop: '10px' }}>
-                    <table className="table table-hover" style={{ fontSize: '0.9em' }}>
-                        <thead style={{ background: '#f8fafc' }}>
-                            <tr>
-                                <th>Nombre Completo</th>
-                                <th>Fecha Registro</th>
-                                <th>Teléfono</th>
-                                <th>Acción</th>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-slate-50 text-left border-b border-slate-200">
+                                <th className="p-3 font-semibold text-slate-600">Nombre Completo</th>
+                                <th className="p-3 font-semibold text-slate-600">Fecha Registro</th>
+                                <th className="p-3 font-semibold text-slate-600">Teléfono</th>
+                                <th className="p-3 font-semibold text-slate-600 text-right">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             {recentPatients.length === 0 ? (
-                                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Cargando recientes...</td></tr>
+                                <tr>
+                                    <td colSpan="4" className="text-center p-6 text-muted">Thinking...</td>
+                                </tr>
                             ) : (
                                 recentPatients.map(p => (
-                                    <tr key={p.id}>
-                                        <td>
-                                            <strong>{p.nombre} {p.apellidoPaterno} {p.apellidoMaterno}</strong>
+                                    <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                        <td className="p-3 font-medium text-slate-800">
+                                            {p.nombre} {p.apellidoPaterno} {p.apellidoMaterno}
                                         </td>
-                                        <td>{formatDateLong(p.fechaRegistro)}</td>
-                                        <td>{p.telefono || '-'}</td>
-                                        <td>
+                                        <td className="p-3 text-slate-600">{formatDateLong(p.fechaRegistro)}</td>
+                                        <td className="p-3 text-slate-600 font-mono">{p.telefono || '-'}</td>
+                                        <td className="p-3 text-right">
                                             <button
-                                                className="btn-sm btn-outline-primary"
+                                                className="btn btn-secondary text-xs py-1 px-3"
                                                 onClick={() => handlePatientSuccess(p)}
                                             >
                                                 Seleccionar →
