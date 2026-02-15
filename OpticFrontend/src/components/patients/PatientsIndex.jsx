@@ -3,6 +3,7 @@ import PatientForm from './PatientForm';
 import './PatientsIndex.css';
 import './../users/UsersIndex.css'; // Reusing generic table styles
 import { formatPhoneNumber } from '../../utils/formatUtils';
+import { getPatients, getAuditPatients, getAuditYears, deletePatient } from '../../services/patientApi';
 
 const PatientsIndex = ({ onNavigate }) => {
     // Tab State: 'recent', 'search', 'all'
@@ -31,74 +32,44 @@ const PatientsIndex = ({ onNavigate }) => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
-            let url = '/api/patients';
-            const params = new URLSearchParams();
-
             if (currentTab === 'recent') {
-                params.append('page', 1);
-                params.append('pageSize', 10);
+                const data = await getPatients({ page: 1, pageSize: 10 });
+                setPatients(data.items || []);
+                setTotalPages(data.totalPages || 1);
             } else if (currentTab === 'all') {
-                params.append('page', currentPage);
-                params.append('pageSize', 30);
+                const data = await getPatients({ page: currentPage, pageSize: 30 });
+                setPatients(data.items || []);
+                setTotalPages(data.totalPages || 1);
             } else if (currentTab === 'search') {
                 if (!search) {
                     setPatients([]);
                     setLoading(false);
                     return;
                 }
-                params.append('search', search);
-                params.append('page', 1);
-                params.append('pageSize', 50);
+                const data = await getPatients({ search, page: 1, pageSize: 50 });
+                setPatients(data.items || []);
+                setTotalPages(data.totalPages || 1);
             } else if (currentTab === 'audit') {
                 if (!auditYear || !auditLetter) {
-                    // Do not fetch until filters selected
                     setPatients([]);
                     setLoading(false);
                     return;
                 }
-                url = '/api/patients/audit'; // Specific endpoint
-                params.append('year', auditYear);
-                params.append('letter', auditLetter);
-            }
-
-            const response = await fetch(`${url}?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al cargar pacientes');
-            }
-
-            const data = await response.json();
-
-            if (data.items) {
-                setPatients(data.items);
-                setTotalPages(data.totalPages);
-            } else {
+                const data = await getAuditPatients(auditYear, auditLetter);
                 setPatients(Array.isArray(data) ? data : []);
             }
-
         } catch (err) {
             console.error(err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }, [auditYear, auditLetter]); // Add dependency on state
+    }, [auditYear, auditLetter]);
 
     const fetchAvailableYears = useCallback(async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/api/patients/audit/years', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const years = await res.json();
-                setAvailableYears(years);
-            }
+            const years = await getAuditYears();
+            setAvailableYears(years);
         } catch (e) {
             console.error("Failed to load years", e);
         }

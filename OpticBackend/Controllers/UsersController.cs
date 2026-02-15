@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpticBackend.Models;
+using OpticBackend.Dtos;
+using OpticBackend.Services.Interfaces;
 using System.Security.Claims;
 
 namespace OpticBackend.Controllers
@@ -15,34 +17,35 @@ namespace OpticBackend.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<UsersController> _logger;
+        private readonly IUserAuthorizationService _authorizationService;
 
         public UsersController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<UsersController> logger)
+            ILogger<UsersController> logger,
+            IUserAuthorizationService authorizationService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _authorizationService = authorizationService;
         }
 
         // GET: api/users - Listar usuarios según reglas de negocio
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null) return Unauthorized();
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId == null) return Unauthorized();
 
-            var currentRoles = await _userManager.GetRolesAsync(currentUser);
-            var isRoot = currentRoles.Contains("Root");
+            var (canManage, isRoot, isAdmin, currentSchema) = await _authorizationService.GetUserPermissionsAsync(currentUserId);
 
             IQueryable<ApplicationUser> query = _userManager.Users;
 
-            // ⚠️ LÓGICA DE AISLAMIENTO
+            // Lógica de aislamiento: Root ve todos, Admin solo ve su esquema
             if (!isRoot)
             {
-                // Si NO es Root, solo ve usuarios de su mismo schema/tenant
-                query = query.Where(u => u.NombreEsquema == currentUser.NombreEsquema);
+                query = query.Where(u => u.NombreEsquema == currentSchema);
             }
 
             var users = await query.ToListAsync();
@@ -54,9 +57,9 @@ namespace OpticBackend.Controllers
                 userDtos.Add(new UserDto
                 {
                     Id = user.Id,
-                    Email = user.Email,
-                    NombreCompleto = user.NombreCompleto,
-                    NombreEsquema = user.NombreEsquema,
+                    Email = user.Email ?? string.Empty,
+                    NombreCompleto = user.NombreCompleto ?? string.Empty,
+                    NombreEsquema = user.NombreEsquema ?? string.Empty,
                     Rol = roles.FirstOrDefault() ?? "Sin Rol",
                     EstaActivo = user.EstaActivo
                 });
@@ -69,21 +72,18 @@ namespace OpticBackend.Controllers
         [HttpPost]
         public async Task<ActionResult> CreateUser(CreateUserDto model)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null) return Unauthorized();
-            
-            var currentRoles = await _userManager.GetRolesAsync(currentUser);
-            var isRoot = currentRoles.Contains("Root");
-            var isAdmin = currentRoles.Contains("Admin");
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId == null) return Unauthorized();
 
-            if (!isRoot && !isAdmin)
+            var (canManage, isRoot, isAdmin, currentSchema) = await _authorizationService.GetUserPermissionsAsync(currentUserId);
+
+            if (!canManage)
             {
                 return Forbid("No tienes permisos para crear usuarios.");
             }
 
-            // ⚠️ REGLA DE ESQUEMA
-            // Si es Root, usa el schema que pida (o default). Si es Admin, FORZAMOS su propio schema.
-            var targetSchema = isRoot ? (model.NombreEsquema ?? "public") : currentUser.NombreEsquema;
+            // Determinar el esquema objetivo usando el servicio
+            var targetSchema = _authorizationService.DetermineTargetSchema(isRoot, model.NombreEsquema, currentSchema);
 
             var newUser = new ApplicationUser
             {
@@ -92,7 +92,7 @@ namespace OpticBackend.Controllers
                 NombreCompleto = model.NombreCompleto,
                 NombreEsquema = targetSchema,
                 EstaActivo = true,
-                EmailConfirmed = true // Auto-confirmado por ahora
+                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(newUser, model.Password);
@@ -136,10 +136,10 @@ namespace OpticBackend.Controllers
             var userToUpdate = await _userManager.FindByIdAsync(id);
             if (userToUpdate == null) return NotFound("Usuario no encontrado");
 
-            // ⚠️ SEGURIDAD: Validar que no modifique usuarios de otro schema (si no es Root)
-            if (!isRoot && userToUpdate.NombreEsquema != currentUser.NombreEsquema)
+            // ⚠️ SEGURIDAD: Validar permisos usando el servicio centralizado
+            if (!await _authorizationService.CanModifyUserAsync(currentUser.Id, id))
             {
-                return Forbid("No puedes modificar usuarios de otra organización.");
+                return Forbid("No tienes permisos para modificar este usuario.");
             }
 
             // Actualizar campos
@@ -210,16 +210,10 @@ namespace OpticBackend.Controllers
                     return BadRequest("No puedes eliminar tu propia cuenta.");
                 }
 
-                // ⚠️ SEGURIDAD: Isolation check
-                if (!isRoot && userToDelete.NombreEsquema != currentUser.NombreEsquema)
+                // ⚠️ SEGURIDAD: Validar permisos usando el servicio centralizado
+                if (!await _authorizationService.CanModifyUserAsync(currentUser.Id, id))
                 {
-                    return Forbid();
-                }
-
-                // Evitar que un Admin borre a un Root
-                if (!isRoot && await _userManager.IsInRoleAsync(userToDelete, "Root"))
-                {
-                    return Forbid("No puedes eliminar a un Super Administrador.");
+                    return Forbid("No tienes permisos para eliminar este usuario.");
                 }
 
                 var result = await _userManager.DeleteAsync(userToDelete);
@@ -239,32 +233,5 @@ namespace OpticBackend.Controllers
                 return StatusCode(500, new { message = "No se puede eliminar el usuario porque tiene registros asociados (ventas, consultas, etc.)." });
             }
         }
-    }
-
-    public class UserDto
-    {
-        public string Id { get; set; }
-        public string Email { get; set; }
-        public string NombreCompleto { get; set; }
-        public string? NombreEsquema { get; set; } // Solo relevante para Root
-        public string Rol { get; set; }
-        public bool EstaActivo { get; set; }
-    }
-
-    public class CreateUserDto
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string NombreCompleto { get; set; }
-        public string Rol { get; set; } // "Admin", "Vendedor"
-        public string? NombreEsquema { get; set; } // Opcional, solo para Root
-    }
-
-    public class UpdateUserDto
-    {
-        public string NombreCompleto { get; set; }
-        public string Rol { get; set; }
-        public string? NombreEsquema { get; set; }
-        public bool EstaActivo { get; set; }
     }
 }

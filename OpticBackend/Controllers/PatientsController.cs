@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using OpticBackend.Data;
 using OpticBackend.Dtos;
 using OpticBackend.Models;
+using OpticBackend.Extensions;
+using OpticBackend.Services.Interfaces;
 
 namespace OpticBackend.Controllers
 {
@@ -15,11 +17,16 @@ namespace OpticBackend.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<PatientsController> _logger;
+        private readonly IPatientDuplicationService _duplicationService;
 
-        public PatientsController(ApplicationDbContext context, ILogger<PatientsController> logger)
+        public PatientsController(
+            ApplicationDbContext context, 
+            ILogger<PatientsController> logger,
+            IPatientDuplicationService duplicationService)
         {
             _context = context;
             _logger = logger;
+            _duplicationService = duplicationService;
         }
 
         // GET: api/patients/audit/years
@@ -80,7 +87,7 @@ namespace OpticBackend.Controllers
                     Telefono = p.Telefono,
                     Email = p.Email,
                     Direccion = p.Direccion,
-                    Edad = CalculateAge(p.FechaNacimiento), 
+                    Edad = p.FechaNacimiento.CalculateAge(), 
                     Ocupacion = p.Ocupacion,
                     Notas = p.Notas,
                     FechaRegistro = p.FechaRegistro,
@@ -137,7 +144,7 @@ namespace OpticBackend.Controllers
                     Telefono = p.Telefono,
                     Email = p.Email,
                     Direccion = p.Direccion,
-                    Edad = CalculateAge(p.FechaNacimiento), 
+                    Edad = p.FechaNacimiento.CalculateAge(), 
                     Ocupacion = p.Ocupacion,
                     Notas = p.Notas,
                     FechaRegistro = p.FechaRegistro,
@@ -180,7 +187,7 @@ namespace OpticBackend.Controllers
                 Telefono = patient.Telefono,
                 Email = patient.Email,
                 Direccion = patient.Direccion,
-                Edad = CalculateAge(patient.FechaNacimiento),
+                Edad = patient.FechaNacimiento.CalculateAge(),
                 Ocupacion = patient.Ocupacion,
                 Notas = patient.Notas,
                 FechaRegistro = patient.FechaRegistro,
@@ -196,57 +203,14 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var query = _context.Pacientes.AsQueryable();
-                
-                // Logic: A patient is a potential duplicate if:
-                // 1. Same Name AND Same Last Name (Paterno or Materno)
-                // 2. OR Same Phone (if provided)
-                // 3. OR Same Email (if provided)
-                // 4. OR Same Name AND Same Address (Family members case)
+                var duplicates = await _duplicationService.FindDuplicatesAsync(
+                    model.Nombre,
+                    model.ApellidoPaterno,
+                    model.ApellidoMaterno,
+                    model.Telefono
+                );
 
-                // Need to use OR conditions.
-                // EF Core translates this to SQL.
-                // String comparison should be case insensitive.
-
-                var normalizedName = model.Nombre.Trim().ToLower();
-                var normalizedPaterno = model.ApellidoPaterno?.Trim().ToLower();
-                var normalizedMaterno = model.ApellidoMaterno?.Trim().ToLower(); // Optional in model, but useful if present
-                var normalizedPhone = model.Telefono?.Trim();
-                var normalizedEmail = model.Email?.Trim().ToLower();
-                var normalizedAddress = model.Direccion?.Trim().ToLower();
-
-                var duplicates = await query.Where(p => 
-                    // Case 1: Strict Full Name Match (Nombre + Paterno + Materno)
-                    (
-                        p.Nombre.ToLower() == normalizedName && 
-                        p.ApellidoPaterno != null && normalizedPaterno != null && p.ApellidoPaterno.ToLower() == normalizedPaterno &&
-                        (
-                             (p.ApellidoMaterno == null && normalizedMaterno == null) || // Both null -> Match
-                             (p.ApellidoMaterno != null && normalizedMaterno != null && p.ApellidoMaterno.ToLower() == normalizedMaterno) // Both present -> Match
-                        )
-                    )
-                    ||
-                    // Case 2: Phone match (Strict)
-                    (normalizedPhone != null && normalizedPhone.Length > 5 && p.Telefono == normalizedPhone)
-                    // Removed Email and Address heuristics to avoid false positives requested by user.
-                ).OrderByDescending(p => p.FechaRegistro).Take(10).ToListAsync();
-
-                var dtos = duplicates.Select(p => new PatientDto
-                {
-                    Id = p.Id,
-                    Nombre = p.Nombre,
-                    ApellidoPaterno = p.ApellidoPaterno,
-                    ApellidoMaterno = p.ApellidoMaterno,
-                    Telefono = p.Telefono,
-                    Email = p.Email,
-                    Direccion = p.Direccion,
-                    Edad = CalculateAge(p.FechaNacimiento), 
-                    Ocupacion = p.Ocupacion,
-                    Notas = p.Notas,
-                    FechaRegistro = p.FechaRegistro,
-                    EstaActivo = p.EstaActivo
-                }).ToList();
-
+                var dtos = duplicates.Select(p => p.ToDto()).ToList();
                 return Ok(dtos);
             }
             catch (Exception ex)
@@ -371,15 +335,6 @@ namespace OpticBackend.Controllers
         private bool PatientExists(Guid id)
         {
             return _context.Pacientes.Any(e => e.Id == id);
-        }
-
-        private int? CalculateAge(DateOnly? dob)
-        {
-            if (!dob.HasValue) return null;
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var age = today.Year - dob.Value.Year;
-            if (dob.Value > today.AddYears(-age)) age--;
-            return age;
         }
     }
 }

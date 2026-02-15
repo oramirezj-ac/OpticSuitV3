@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './../users/UserForm.css'; // Reutilizamos estilos del modal
+import { calculateAgeFromDate, calculateDateFromAge, formatDateForInput } from '../../utils/dateUtils';
+import { checkDuplicates, createPatient, updatePatient } from '../../services/patientApi';
 
 const PatientForm = ({ patient, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -18,33 +20,6 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    // Helpers
-    const calculateAgeFromDate = (dateString) => {
-        if (!dateString) return '';
-        const today = new Date();
-        const birthDate = new Date(dateString);
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-        return age;
-    };
-
-    const calculateDateFromAge = (age) => {
-        if (!age) return '';
-        const today = new Date();
-        const year = today.getFullYear() - parseInt(age);
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    const formatDateForInput = (dateString) => {
-        if (!dateString) return '';
-        return dateString.split('T')[0];
-    };
 
     useEffect(() => {
         if (patient) {
@@ -91,54 +66,25 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
-            const method = patient ? 'PUT' : 'POST';
-            const url = patient ? `/api/patients/${patient.id}` : '/api/patients';
-
             const payload = { ...formData };
             delete payload.edad;
             if (!payload.fechaNacimiento) payload.fechaNacimiento = null;
 
             // Check for duplicates only when creating new patient and not forcing creation
             if (!patient && !forceCreate) {
-                const checkUrl = '/api/patients/check-duplicates';
-                const checkRes = await fetch(checkUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (checkRes.ok) {
-                    const foundDuplicates = await checkRes.json();
-                    if (foundDuplicates && foundDuplicates.length > 0) {
-                        setDuplicates(foundDuplicates);
-                        setLoading(false);
-                        return; // Stop here and show duplicates
-                    }
+                const foundDuplicates = await checkDuplicates(payload);
+                if (foundDuplicates && foundDuplicates.length > 0) {
+                    setDuplicates(foundDuplicates);
+                    setLoading(false);
+                    return; // Stop here and show duplicates
                 }
             }
 
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                let errMessage = 'Error al guardar paciente';
-                try {
-                    const errData = await response.json();
-                    errMessage = errData.message || errData.title || JSON.stringify(errData);
-                } catch (e) {
-                    errMessage = await response.text();
-                }
-                throw new Error(errMessage);
+            // Create or update patient
+            if (patient) {
+                await updatePatient(patient.id, payload);
+            } else {
+                await createPatient(payload);
             }
 
             onSuccess();
@@ -161,9 +107,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
 
                 // Compare timestamps, if new date is older (smaller timestamp)
                 if (newDate < oldDate) {
-                    const token = localStorage.getItem('token');
                     // Construct update payload using existing patient data but with new date
-                    // We must include all fields required by UpdatePatientDto or at least those present
                     const updatePayload = {
                         nombre: existingPatient.nombre,
                         apellidoPaterno: existingPatient.apellidoPaterno,
@@ -178,16 +122,9 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                         estaActivo: existingPatient.estaActivo
                     };
 
-                    await fetch(`/api/patients/${existingPatient.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(updatePayload)
-                    });
+                    await updatePatient(existingPatient.id, updatePayload);
 
-                    // Trigger success to refresh lists if needed, though we didn't create a NEW one
+                    // Trigger success to refresh lists if needed
                     if (onSuccess) onSuccess();
                 }
             }

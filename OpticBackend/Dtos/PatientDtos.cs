@@ -11,12 +11,14 @@ namespace OpticBackend.Dtos
         public string? Telefono { get; set; }
         public string? Email { get; set; }
         public string? Direccion { get; set; }
+        public DateOnly? FechaNacimiento { get; set; }
         public int? Edad { get; set; } // Computed from DOB or stored
         public string? Ocupacion { get; set; }
         public string? Notas { get; set; }
         public DateTime FechaRegistro { get; set; }
         public bool EstaActivo { get; set; }
     }
+
 
     public class CreatePatientDto
     {
