@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
+import { formatCurrency } from '../../../utils/formatUtils';
 
 const SaleDetailModal = ({ sale, onClose }) => {
     if (!sale) return null;
@@ -23,12 +24,12 @@ const SaleDetailModal = ({ sale, onClose }) => {
                     </div>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>TOTAL:</strong>
-                        <div style={{ fontSize: '1.2em', color: '#0f172a' }}>${sale.totalVenta?.toFixed(2)}</div>
+                        <div style={{ fontSize: '1.2em', color: '#0f172a' }}>{formatCurrency(sale.totalVenta)}</div>
                     </div>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>SALDO PENDIENTE:</strong>
                         <div style={{ fontSize: '1.2em', color: sale.saldoPendiente > 0.1 ? '#ef4444' : '#10b981' }}>
-                            ${sale.saldoPendiente?.toFixed(2)}
+                            {formatCurrency(sale.saldoPendiente)}
                         </div>
                     </div>
                 </div>
@@ -45,7 +46,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
                         {sale.detalles?.map((d, i) => (
                             <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                 <td style={{ padding: '8px' }}>{d.descripcionManual || 'Producto sin descripción'}</td>
-                                <td style={{ padding: '8px', textAlign: 'right' }}>${d.precioAplicado?.toFixed(2)}</td>
+                                <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(d.precioAplicado)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -68,7 +69,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
                                 <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                     <td style={{ padding: '8px' }}>{formatDateLong(a.fechaPago)}</td>
                                     <td style={{ padding: '8px' }}>{a.metodoPago}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>${a.monto?.toFixed(2)}</td>
+                                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(a.monto)}</td>
                                 </tr>
                             ))}
                         </tbody>
