@@ -32,11 +32,11 @@ const Login = ({ onLoginSuccess }) => {
       if (response.ok) {
         const data = await response.json();
 
-        // Save to LocalStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userEmail', data.email);
-        localStorage.setItem('userSchema', data.schema);
-        localStorage.setItem('userRoles', JSON.stringify(data.roles)); // ✅ Guardar roles
+        // Save to sessionStorage instead of localStorage
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('userEmail', data.email);
+        sessionStorage.setItem('userSchema', data.schema);
+        sessionStorage.setItem('userRoles', JSON.stringify(data.roles)); // ✅ Guardar roles
 
         setStatus({ type: 'success', message: `¡Bienvenido, ${data.nombreCompleto || 'Usuario'}!` });
 

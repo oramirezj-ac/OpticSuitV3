@@ -9,6 +9,7 @@ import PatientDelete from './components/patients/PatientDelete';
 import PatientDetails from './components/patients/PatientDetails';
 import HistoricalCapture from './components/historical/HistoricalCapture';
 import SystemCustomization from './components/admin/SystemCustomization';
+import useIdleTimeout from './hooks/useIdleTimeout';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,8 +18,8 @@ function App() {
   const [navigationParams, setNavigationParams] = useState({}); // Stores params like { userId: '123' }
 
   useEffect(() => {
-    // Check if token exists on load
-    const token = localStorage.getItem('token');
+    // Check if token exists on load using sessionStorage
+    const token = sessionStorage.getItem('token');
     if (token) {
       setIsLoggedIn(true);
     }
@@ -32,13 +33,22 @@ function App() {
 
   const handleLogout = () => {
     console.log('👋 [Auth] Cerrando sesión...');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userSchema');
-    localStorage.removeItem('userRoles');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('userEmail');
+    sessionStorage.removeItem('userSchema');
+    sessionStorage.removeItem('userRoles');
     setIsLoggedIn(false);
     setCurrentPage('dashboard');
   };
+
+  // Initialize the idle timeout hook (60 minutes)
+  useIdleTimeout(() => {
+    if (isLoggedIn) {
+      console.log('⏰ [Auth] Cierre de sesión por inactividad');
+      handleLogout();
+      alert('Tu sesión ha expirado por inactividad.');
+    }
+  }, 60);
 
   const handleNavigate = (page, params = {}) => {
     setCurrentPage(page);

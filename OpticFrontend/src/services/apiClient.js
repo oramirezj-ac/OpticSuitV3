@@ -7,7 +7,7 @@
  * Obtiene el token de autenticación del localStorage
  * @returns {string|null} Token de autenticación
  */
-const getAuthToken = () => localStorage.getItem('token');
+const getAuthToken = () => sessionStorage.getItem('token');
 
 /**
  * Maneja la respuesta de la API de forma consistente
