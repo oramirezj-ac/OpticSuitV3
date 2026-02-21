@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './../users/UserForm.css'; // Reutilizamos estilos del modal
 import { calculateAgeFromDate, calculateDateFromAge, formatDateForInput } from '../../utils/dateUtils';
 import { checkDuplicates, createPatient, updatePatient } from '../../services/patientApi';
@@ -139,7 +140,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
     const colStyle = { padding: '5px' };
 
     if (duplicates) {
-        return (
+        const modalContent = (
             <div className="modal-overlay">
                 <div className="modal-card" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                     <div className="modal-header">
@@ -198,12 +199,11 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                 </div>
             </div>
         );
+
+        return ReactDOM.createPortal(modalContent, document.body);
     }
 
-    // Style for spacing inputs
-
-
-    return (
+    const mainModalContent = (
         <div className="modal-overlay">
             <div className="modal-card" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                 <div className="modal-header">
@@ -371,6 +371,8 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
             </div>
         </div>
     );
+
+    return ReactDOM.createPortal(mainModalContent, document.body);
 };
 
 export default PatientForm;

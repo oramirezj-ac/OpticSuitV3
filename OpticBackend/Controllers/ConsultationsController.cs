@@ -151,6 +151,19 @@ namespace OpticBackend.Controllers
             return Ok(consultation);
         }
 
+        // GET: api/consultations/recent
+        [HttpGet("recent")]
+        public async Task<ActionResult<IEnumerable<Consultation>>> GetRecentConsultations([FromQuery] int count = 15)
+        {
+            var consultations = await _context.Consultas
+                .Include(c => c.Paciente)
+                .OrderByDescending(c => c.Fecha)
+                .Take(count)
+                .ToListAsync();
+
+            return Ok(consultations);
+        }
+
         // GET: api/consultations/patient/{patientId}
         [HttpGet("patient/{patientId}")]
         public async Task<ActionResult<IEnumerable<Consultation>>> GetPatientConsultations(Guid patientId)

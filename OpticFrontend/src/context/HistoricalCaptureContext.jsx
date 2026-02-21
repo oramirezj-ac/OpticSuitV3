@@ -26,7 +26,7 @@ export const HistoricalCaptureProvider = ({ children, onNavigate }) => {
     // Step 2: Consultation
     const [consultationForm, setConsultationForm] = useState({
         fecha: new Date().toISOString().split('T')[0],
-        motivo: 'Nota Histórica'
+        motivo: 'Revisar graduación'
     });
 
     // Step 3: Graduation
@@ -58,7 +58,7 @@ export const HistoricalCaptureProvider = ({ children, onNavigate }) => {
         setLoading(false);
         setError(null);
         setSuccessMessage(null);
-        setConsultationForm({ fecha: new Date().toISOString().split('T')[0], motivo: 'Nota Histórica' });
+        setConsultationForm({ fecha: new Date().toISOString().split('T')[0], motivo: 'Revisar graduación' });
         setGraduationForm({
             od_esfera: '', od_cilindro: '', od_eje: '', od_adicion: '',
             oi_esfera: '', oi_cilindro: '', oi_eje: '', oi_adicion: '',

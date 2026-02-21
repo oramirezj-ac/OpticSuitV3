@@ -46,6 +46,15 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                                 <span className="icon">📜</span> Captura Histórica
                             </a>
                         </li>
+                        <li>
+                            <a
+                                href="#"
+                                className={activePage === 'consultations' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('consultations'); }}
+                            >
+                                <span className="icon">🩺</span> Consultas Clínicas
+                            </a>
+                        </li>
 
                         {/* ✅ Solo visible para Administrador (y Root) */}
                         {canManageUsers && (

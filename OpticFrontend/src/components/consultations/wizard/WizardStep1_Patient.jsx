@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import HistoricalPatientForm from '../HistoricalPatientForm';
-import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
-import { formatPhoneNumber } from '../../../utils/formatUtils';
+import { useConsultations } from '../../../context/consultations/ConsultationsContext';
 import { apiClient } from '../../../services/apiClient';
+import PatientForm from '../../patients/PatientForm'; // Reusing the modal-based form
+import { formatPhoneNumber } from '../../../utils/formatUtils';
 
-const Step1_Patient = () => {
-    const { setCapturedData, setConsultationForm, setCurrentStep } = useHistoricalCapture();
+const WizardStep1_Patient = () => {
+    const { setCapturedData, nextStep, wizardType } = useConsultations();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Modal for creating a new patient inline
     const [showNewPatientModal, setShowNewPatientModal] = useState(false);
 
+    // Debounced search effect
     useEffect(() => {
         const fetchPatients = async () => {
             if (searchTerm.length < 3) {
@@ -24,6 +25,7 @@ const Step1_Patient = () => {
             setLoading(true);
             setError(null);
             try {
+                // Fetch using our standard search endpoint logic
                 const response = await apiClient.get(`/api/patients?search=${encodeURIComponent(searchTerm)}&page=1&pageSize=10`);
                 setSearchResults(response.items || []);
             } catch (err) {
@@ -36,30 +38,37 @@ const Step1_Patient = () => {
 
         const timerId = setTimeout(() => {
             fetchPatients();
-        }, 500);
+        }, 500); // 500ms debounce
 
         return () => clearTimeout(timerId);
     }, [searchTerm]);
 
     const handleSelectPatient = (patient) => {
         setCapturedData(prev => ({ ...prev, patient }));
-        setCurrentStep(2);
+        nextStep(); // Move to Step 2 (Consultation)
     };
 
-    const handlePatientSuccess = (patientData, preferredDate = null) => {
-        setCapturedData(prev => ({ ...prev, patient: patientData }));
-        const dateToUse = preferredDate || patientData.fechaRegistro;
-        if (dateToUse) {
-            setConsultationForm(prev => ({ ...prev, fecha: dateToUse.split('T')[0] }));
-        }
+    const handleNewPatientSuccess = async () => {
         setShowNewPatientModal(false);
-        setCurrentStep(2);
+        // We need to automatically select the newly created patient.
+        // The easiest way is to search by the same name or wait for the user.
+        // For a smoother flow, since PatientForm doesn't return the ID, we'll prompt the user to search again or we can re-fetch latest.
+        // Given PatientForm currently doesn't easily return the newly created object, we will refetch the list ordered by date.
+        try {
+            const data = await apiClient.get('/api/patients?page=1&pageSize=1');
+            if (data.items && data.items.length > 0) {
+                handleSelectPatient(data.items[0]);
+            }
+        } catch (e) {
+            console.error("Failed to auto-select new patient", e);
+        }
     };
 
     return (
-        <div className="step-patient fade-in">
+        <div className="animate-fade-in">
             <div className="mb-6">
-                <p className="text-sm text-slate-500">Busque un paciente existente o registre uno nuevo con fecha retroactiva para comenzar la captura histórica.</p>
+                <h4 className="text-lg font-semibold text-slate-800 mb-2">Paso 1: Seleccionar Paciente</h4>
+                <p className="text-sm text-slate-500">Busque un paciente existente o registre uno nuevo para comenzar la consulta.</p>
             </div>
 
             <div className="flex gap-4 mb-6">
@@ -74,15 +83,17 @@ const Step1_Patient = () => {
                     />
                 </div>
                 <button
-                    className="btn-primary flex items-center gap-2"
+                    className="btn-primary"
                     onClick={() => setShowNewPatientModal(true)}
                 >
-                    <span className="text-xl">+</span> Nuevo Paciente
+                    + Nuevo Paciente
                 </button>
             </div>
 
+            {/* Error Message */}
             {error && <div className="alert alert-danger mb-4">{error}</div>}
 
+            {/* Search Results Area */}
             <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden min-h-[300px]">
                 {loading ? (
                     <div className="p-8 text-center text-slate-500">Buscando paciente...</div>
@@ -92,7 +103,6 @@ const Step1_Patient = () => {
                             <tr>
                                 <th className="p-3 font-semibold text-slate-600">Nombre</th>
                                 <th className="p-3 font-semibold text-slate-600">Teléfono</th>
-                                <th className="p-3 font-semibold text-slate-600">Registro</th>
                                 <th className="p-3 font-semibold text-slate-600 text-right">Acción</th>
                             </tr>
                         </thead>
@@ -103,7 +113,6 @@ const Step1_Patient = () => {
                                         {p.nombre} {p.apellidoPaterno} {p.apellidoMaterno}
                                     </td>
                                     <td className="p-3 text-slate-600">{formatPhoneNumber(p.telefono) || '-'}</td>
-                                    <td className="p-3 text-slate-600">{p.fechaRegistro ? p.fechaRegistro.split('T')[0] : '-'}</td>
                                     <td className="p-3 text-right">
                                         <button
                                             className="btn-secondary text-sm py-1 px-3"
@@ -126,22 +135,18 @@ const Step1_Patient = () => {
                 )}
             </div>
 
-            {showNewPatientModal && ReactDOM.createPortal(
-                <div className="modal-overlay" style={{ zIndex: 110 }}>
-                    <div className="modal-card" style={{ maxWidth: '900px', width: '90%', maxHeight: '90vh', minHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
-                        <div className="modal-header">
-                            <h3>Nuevo Paciente (Histórico)</h3>
-                            <button className="btn-close" onClick={() => setShowNewPatientModal(false)}>&times;</button>
-                        </div>
-                        <div className="modal-body" style={{ overflowY: 'auto', padding: '24px' }}>
-                            <HistoricalPatientForm onPatientSelected={handlePatientSuccess} />
-                        </div>
-                    </div>
-                </div>,
-                document.body
+            {/* New Patient Modal overlay mapping */}
+            {showNewPatientModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 110 }}>
+                    <PatientForm
+                        patient={null}
+                        onClose={() => setShowNewPatientModal(false)}
+                        onSuccess={handleNewPatientSuccess}
+                    />
+                </div>
             )}
         </div>
     );
 };
 
-export default Step1_Patient;
+export default WizardStep1_Patient;

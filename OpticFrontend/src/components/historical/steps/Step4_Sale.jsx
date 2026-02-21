@@ -43,12 +43,12 @@ const Step4_Sale = () => {
 
 
     // ================= PRODUCT KEYWORDS =================
-    const PRODUCT_KEYWORDS = [
-        "Monofocal", "Progresivo", "Bifocal Flap Top",
-        "Cr-39", "Hi-index", "Policarbonato", "Cristal", "Trivex",
-        "AR", "Fotocromático", "Anti-Blue",
-        "En Armazón", "En Armazón de marca", "En Armazón propio"
-    ];
+    const PRODUCT_CATEGORIES = {
+        "Lentes": ["Monofocal", "Progresivo", "Bifocal Flap Top"],
+        "Materiales": ["Cr-39", "Hi-index", "Policarbonato", "Cristal", "Trivex"],
+        "Tratamientos": ["AR", "Fotocromático", "Anti-Blue"],
+        "Armazón": ["En Armazón", "En Armazón de marca", "En Armazón propio"]
+    };
 
     const insertKeyword = (keyword) => {
         setSaleForm(prev => ({
@@ -142,7 +142,6 @@ const Step4_Sale = () => {
 
     return (
         <div className="step-sale fade-in">
-            <h3>Paso 4: Datos de Venta</h3>
             <div className="alert alert-info flex items-center gap-2">
                 <span className="text-xl">ℹ️</span>
                 <span>Capture el historial financiero. Seleccione el vendedor responsable.</span>
@@ -212,17 +211,26 @@ const Step4_Sale = () => {
                         onChange={handleSaleChange}
                         placeholder="Especifique armazón, micas, tratamientos..."
                     />
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {PRODUCT_KEYWORDS.map(kw => (
-                            <button
-                                key={kw}
-                                type="button"
-                                onClick={() => insertKeyword(kw)}
-                                className="badge badge-light"
-                                style={{ border: 'none', cursor: 'pointer' }}
-                            >
-                                + {kw}
-                            </button>
+                    <div className="flex flex-col gap-3 mt-3">
+                        {Object.entries(PRODUCT_CATEGORIES).map(([category, keywords]) => (
+                            <div key={category} className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-semibold text-slate-500 uppercase w-24">
+                                    {category}:
+                                </span>
+                                {keywords.map(kw => (
+                                    <button
+                                        key={kw}
+                                        type="button"
+                                        onClick={() => insertKeyword(kw)}
+                                        className="badge badge-light"
+                                        style={{ border: '1px solid var(--slate-300)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                        onMouseOver={(e) => Object.assign(e.target.style, { background: 'var(--slate-200)', borderColor: 'var(--slate-400)' })}
+                                        onMouseOut={(e) => Object.assign(e.target.style, { background: 'var(--slate-100)', borderColor: 'var(--slate-300)' })}
+                                    >
+                                        + {kw}
+                                    </button>
+                                ))}
+                            </div>
                         ))}
                     </div>
                 </div>

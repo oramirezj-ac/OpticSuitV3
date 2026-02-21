@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './UserForm.css';
 
 const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
@@ -70,7 +71,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
         }
     };
 
-    return (
+    const modalContent = (
         <div className="modal-overlay">
             <div className="modal-card">
                 <div className="modal-header">
@@ -186,6 +187,8 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
             </div>
         </div>
     );
+
+    return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default UserForm;

@@ -8,6 +8,7 @@ import PatientsIndex from './components/patients/PatientsIndex';
 import PatientDelete from './components/patients/PatientDelete';
 import PatientDetails from './components/patients/PatientDetails';
 import HistoricalCapture from './components/historical/HistoricalCapture';
+import ConsultationsIndex from './components/consultations/ConsultationsIndex';
 import SystemCustomization from './components/admin/SystemCustomization';
 import useIdleTimeout from './hooks/useIdleTimeout';
 
@@ -46,7 +47,7 @@ function App() {
     if (isLoggedIn) {
       console.log('⏰ [Auth] Cierre de sesión por inactividad');
       handleLogout();
-      alert('Tu sesión ha expirado por inactividad.');
+      // Silently log out without blocking the UI
     }
   }, 60);
 
@@ -89,6 +90,8 @@ function App() {
         );
       case 'historical-capture':
         return <HistoricalCapture onNavigate={handleNavigate} />;
+      case 'consultations':
+        return <ConsultationsIndex onNavigate={handleNavigate} />;
       case 'customization':
         return <SystemCustomization onNavigate={handleNavigate} />;
       case 'dashboard':
