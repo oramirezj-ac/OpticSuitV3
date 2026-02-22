@@ -18,7 +18,7 @@ const WizardStep1_Patient = () => {
     // Debounced search effect
     useEffect(() => {
         const fetchPatients = async () => {
-            if (searchTerm.length < 3) {
+            if (searchTerm.length < 2) {
                 setSearchResults([]);
                 return;
             }
@@ -125,12 +125,12 @@ const WizardStep1_Patient = () => {
                             ))}
                         </tbody>
                     </table>
-                ) : searchTerm.length >= 3 ? (
+                ) : searchTerm.length >= 2 ? (
                     <div className="p-8 text-center text-slate-500 italic">No se encontraron pacientes que coincidan con la búsqueda.</div>
                 ) : (
                     <div className="p-12 text-center text-slate-400">
                         <span className="text-4xl mb-3 block">🧑‍⚕️</span>
-                        Escriba al menos 3 caracteres para buscar
+                        Escriba al menos 2 caracteres para buscar
                     </div>
                 )}
             </div>

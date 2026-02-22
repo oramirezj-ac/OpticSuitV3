@@ -21,6 +21,7 @@ const Step2_Consultation = () => {
                 body: JSON.stringify({
                     pacienteId: capturedData.patient.id,
                     fecha: consultationForm.fecha,
+                    tipoConsulta: 'consulta_lentes',
                     motivoConsulta: consultationForm.motivo,
                     estadoFinanciero: 'pendiente'
                 })

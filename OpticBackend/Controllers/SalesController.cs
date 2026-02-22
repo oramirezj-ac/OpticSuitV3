@@ -56,5 +56,77 @@ namespace OpticBackend.Controllers
 
             return Ok(sale);
         }
+
+        // PUT: api/sales/{id}
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Sale>> UpdateSale(Guid id, UpdateSaleDto model)
+        {
+            try
+            {
+                var sale = await _salesService.UpdateSaleAsync(id, model);
+
+                if (sale == null) return NotFound();
+
+                return Ok(sale);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating sale");
+                return StatusCode(500, new { message = $"Error al actualizar la venta: {ex.Message}" });
+            }
+        }
+
+        // --- ENDPOINTS DE ABONOS ---
+
+        // POST: api/sales/{saleId}/payments
+        [HttpPost("{saleId}/payments")]
+        public async Task<ActionResult<Sale>> AddPayment(Guid saleId, CreatePaymentDto model)
+        {
+            try
+            {
+                var sale = await _salesService.AddPaymentAsync(saleId, model);
+                if (sale == null) return NotFound(new { message = "Venta no encontrada" });
+                return Ok(sale);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding payment");
+                return StatusCode(500, new { message = $"Error al agregar el abono: {ex.Message}" });
+            }
+        }
+
+        // PUT: api/sales/{saleId}/payments/{paymentId}
+        [HttpPut("{saleId}/payments/{paymentId}")]
+        public async Task<ActionResult<Sale>> UpdatePayment(Guid saleId, Guid paymentId, UpdatePaymentDto model)
+        {
+            try
+            {
+                var sale = await _salesService.UpdatePaymentAsync(saleId, paymentId, model);
+                if (sale == null) return NotFound(new { message = "Venta o abono no encontrado" });
+                return Ok(sale);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating payment");
+                return StatusCode(500, new { message = $"Error al actualizar el abono: {ex.Message}" });
+            }
+        }
+
+        // DELETE: api/sales/{saleId}/payments/{paymentId}
+        [HttpDelete("{saleId}/payments/{paymentId}")]
+        public async Task<ActionResult<Sale>> DeletePayment(Guid saleId, Guid paymentId)
+        {
+            try
+            {
+                var sale = await _salesService.DeletePaymentAsync(saleId, paymentId);
+                if (sale == null) return NotFound(new { message = "Venta o abono no encontrado" });
+                return Ok(sale);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting payment");
+                return StatusCode(500, new { message = $"Error al eliminar el abono: {ex.Message}" });
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ namespace OpticBackend.Dtos.Consultations
     {
         public Guid PacienteId { get; set; }
         public DateTime? Fecha { get; set; }
+        public string? TipoConsulta { get; set; }
         public string? MotivoConsulta { get; set; }
         public string? Observaciones { get; set; }
         public decimal? CostoServicio { get; set; }

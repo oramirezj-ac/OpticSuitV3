@@ -7,6 +7,7 @@ using OpticBackend.Dtos;
 using OpticBackend.Models;
 using OpticBackend.Extensions;
 using OpticBackend.Services.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace OpticBackend.Controllers
 {
@@ -117,20 +118,37 @@ namespace OpticBackend.Controllers
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    search = search.ToLower();
-                    query = query.Where(p => 
-                        p.Nombre.ToLower().Contains(search) || 
-                        (p.ApellidoPaterno != null && p.ApellidoPaterno.ToLower().Contains(search)) ||
-                        (p.Telefono != null && p.Telefono.Contains(search)) ||
-                        (p.Email != null && p.Email.ToLower().Contains(search))
-                    );
+                    search = search.Trim();
+                    // Determine if the search is likely a phone number or email to avoid complex regex on them
+                    bool isEmailOrPhone = search.Contains("@") || search.Any(char.IsDigit);
+
+                    if (isEmailOrPhone)
+                    {
+                        search = search.ToLower();
+                        query = query.Where(p => 
+                            (p.Telefono != null && p.Telefono.Contains(search)) ||
+                            (p.Email != null && p.Email.ToLower().Contains(search))
+                        );
+                    }
+                    else
+                    {
+                        // Build accent-insensitive regex pattern
+                        string pattern = BuildAccentInsensitiveRegex(search);
+                        
+                        // EF Core will translate Regex.IsMatch to PostgreSQL ~* (regex match ignoring case)
+                        query = query.Where(p => 
+                            Regex.IsMatch(p.Nombre, pattern, RegexOptions.IgnoreCase) || 
+                            (p.ApellidoPaterno != null && Regex.IsMatch(p.ApellidoPaterno, pattern, RegexOptions.IgnoreCase)) ||
+                            (p.ApellidoMaterno != null && Regex.IsMatch(p.ApellidoMaterno, pattern, RegexOptions.IgnoreCase))
+                        );
+                    }
                 }
 
                 var totalItems = await query.CountAsync();
 
-                // Ordenar por fecha de registro descendente
+                // Ordenar por fecha de actualización descendente (más recientes primero)
                 var patients = await query
-                    .OrderByDescending(p => p.FechaRegistro)
+                    .OrderByDescending(p => p.FechaActualizacion)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -288,6 +306,7 @@ namespace OpticBackend.Controllers
                 patient.FechaRegistro = dt;
             }
             patient.EstaActivo = model.EstaActivo;
+            patient.FechaActualizacion = DateTime.UtcNow;
 
             try
             {
@@ -335,6 +354,23 @@ namespace OpticBackend.Controllers
         private bool PatientExists(Guid id)
         {
             return _context.Pacientes.Any(e => e.Id == id);
+        }
+
+        private string BuildAccentInsensitiveRegex(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            // Escape special regex characters in the input
+            string escapedInput = Regex.Escape(input);
+
+            // Replace vowels with regex groups that include accented variants
+            escapedInput = Regex.Replace(escapedInput, "a", "[aáäAÁÄ]", RegexOptions.IgnoreCase);
+            escapedInput = Regex.Replace(escapedInput, "e", "[eéëEÉË]", RegexOptions.IgnoreCase);
+            escapedInput = Regex.Replace(escapedInput, "i", "[iíïIÍÏ]", RegexOptions.IgnoreCase);
+            escapedInput = Regex.Replace(escapedInput, "o", "[oóöOÓÖ]", RegexOptions.IgnoreCase);
+            escapedInput = Regex.Replace(escapedInput, "u", "[uúüUÚÜ]", RegexOptions.IgnoreCase);
+
+            return escapedInput;
         }
     }
 }

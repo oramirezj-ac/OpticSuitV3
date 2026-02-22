@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 /**
  * Custom hook for tracking user inactivity
@@ -8,9 +8,9 @@ import { useState, useEffect, useCallback } from 'react';
 const useIdleTimeout = (onIdle, idleTime = 60) => {
     // Convert minutes to milliseconds
     const idleTimeoutMillseconds = idleTime * 60 * 1000;
-    
-    // Timer reference for cleanup
-    const [timer, setTimer] = useState(null);
+
+    // Timer reference that persists across renders without causing re-renders
+    const timerRef = useRef(null);
 
     const handleIdle = useCallback(() => {
         if (onIdle) {
@@ -20,14 +20,13 @@ const useIdleTimeout = (onIdle, idleTime = 60) => {
 
     const startTimer = useCallback(() => {
         // Clear previous timer if it exists
-        if (timer) {
-            clearTimeout(timer);
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
         }
-        
+
         // Start a new timer
-        const newTimer = setTimeout(handleIdle, idleTimeoutMillseconds);
-        setTimer(newTimer);
-    }, [handleIdle, idleTimeoutMillseconds, timer]);
+        timerRef.current = setTimeout(handleIdle, idleTimeoutMillseconds);
+    }, [handleIdle, idleTimeoutMillseconds]);
 
     const resetTimer = useCallback(() => {
         startTimer();
@@ -58,8 +57,8 @@ const useIdleTimeout = (onIdle, idleTime = 60) => {
 
         // Cleanup function
         return () => {
-            if (timer) {
-                clearTimeout(timer);
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
             }
             events.forEach(event => {
                 window.removeEventListener(event, handleEvent);

@@ -9,6 +9,9 @@ export const usePatientData = (patientId) => {
     const [consultations, setConsultations] = useState([]);
     const [sales, setSales] = useState([]);
     const [loadingTab, setLoadingTab] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const refreshData = () => setRefreshTrigger(prev => prev + 1);
 
     // Fetch Patient Basic Data
     useEffect(() => {
@@ -46,8 +49,10 @@ export const usePatientData = (patientId) => {
             try {
                 const token = localStorage.getItem('token');
                 let url = '';
-                if (activeTab === 'consultations') {
-                    url = `/api/consultations/patient/${patientId}`;
+                if (activeTab === 'consultations_lenses') {
+                    url = `/api/consultations/patient/${patientId}?tipo=consulta_lentes`;
+                } else if (activeTab === 'consultations_medical') {
+                    url = `/api/consultations/patient/${patientId}?tipo=consulta_medica`;
                 } else if (activeTab === 'sales') {
                     url = `/api/sales/patient/${patientId}`;
                 }
@@ -61,7 +66,7 @@ export const usePatientData = (patientId) => {
                 if (response.ok) {
                     const data = await response.json();
 
-                    if (activeTab === 'consultations') {
+                    if (activeTab === 'consultations_lenses' || activeTab === 'consultations_medical') {
                         setConsultations(data.items || (Array.isArray(data) ? data : []));
                     } else if (activeTab === 'sales') {
                         setSales(data.items || (Array.isArray(data) ? data : []));
@@ -75,7 +80,7 @@ export const usePatientData = (patientId) => {
         };
 
         fetchTabData();
-    }, [activeTab, patientId]);
+    }, [activeTab, patientId, refreshTrigger]);
 
     return {
         patient,
@@ -85,6 +90,7 @@ export const usePatientData = (patientId) => {
         setActiveTab,
         consultations,
         sales,
-        loadingTab
+        loadingTab,
+        refreshData
     };
 };

@@ -38,6 +38,7 @@ const WizardStep2_Consultation = () => {
             const payload = {
                 pacienteId: capturedData.patient.id,
                 fecha: new Date().toISOString(),
+                tipoConsulta: wizardType === 'medical' ? 'consulta_medica' : 'consulta_lentes',
                 motivoConsulta: form.motivoConsulta,
                 observaciones: form.observaciones,
                 estadoFinanciero: 'pendiente',

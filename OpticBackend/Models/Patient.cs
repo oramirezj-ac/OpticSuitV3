@@ -46,6 +46,9 @@ namespace OpticBackend.Models
         [Column("fecha_creacion")]
         public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 
+        [Column("fecha_actualizacion")]
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+
         [Column("metadata", TypeName = "jsonb")]
         public string? Metadata { get; set; } // Simple mapping for now
     }

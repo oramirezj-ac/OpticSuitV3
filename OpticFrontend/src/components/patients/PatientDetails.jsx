@@ -5,6 +5,7 @@ import PatientHeader from './details/PatientHeader';
 import PatientSummary from './details/PatientSummary';
 import ConsultationHistory from './details/ConsultationHistory';
 import SalesHistory from './details/SalesHistory';
+import MedicalCheckoutModal from './details/MedicalCheckoutModal';
 import './PatientDetails.css';
 
 const PatientDetails = ({ patientId, onBack, onNavigate }) => {
@@ -17,11 +18,24 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
         setActiveTab,
         consultations,
         sales,
-        loadingTab
+        loadingTab,
+        refreshData
     } = usePatientData(patientId);
 
     // Estado local para UI (Modal)
     const [selectedSale, setSelectedSale] = useState(null);
+    const [checkoutConsultation, setCheckoutConsultation] = useState(null);
+
+    const handleCheckoutSuccess = () => {
+        setCheckoutConsultation(null);
+        setActiveTab('sales');
+        refreshData();
+    };
+
+    const handleSaleUpdated = (updatedSale) => {
+        setSelectedSale(updatedSale);
+        refreshData();
+    };
 
     if (loading) return <div className="loading-container"><div className="loader"></div></div>;
     if (error) return <div className="alert alert-danger">Error: {error} <button onClick={onBack}>Regresar</button></div>;
@@ -41,10 +55,16 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                     Resumen
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'consultations' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('consultations')}
+                    className={`tab-btn ${activeTab === 'consultations_lenses' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('consultations_lenses')}
                 >
-                    Consultas
+                    Consultas (Lentes)
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'consultations_medical' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('consultations_medical')}
+                >
+                    Consultas Médicas
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'sales' ? 'active' : ''}`}
@@ -60,11 +80,22 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                     <PatientSummary patient={patient} />
                 )}
 
-                {activeTab === 'consultations' && (
+                {activeTab === 'consultations_lenses' && (
                     <ConsultationHistory
+                        type="lenses"
                         consultations={consultations}
                         loading={loadingTab}
                         onNavigate={onNavigate}
+                    />
+                )}
+
+                {activeTab === 'consultations_medical' && (
+                    <ConsultationHistory
+                        type="medical"
+                        consultations={consultations}
+                        loading={loadingTab}
+                        onNavigate={onNavigate}
+                        onCheckout={setCheckoutConsultation}
                     />
                 )}
 
@@ -82,7 +113,18 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
             <SaleDetailModal
                 sale={selectedSale}
                 onClose={() => setSelectedSale(null)}
+                onSaleUpdated={handleSaleUpdated}
             />
+
+            {/* MEDICAL CHECKOUT MODAL */}
+            {checkoutConsultation && (
+                <MedicalCheckoutModal
+                    consultation={checkoutConsultation}
+                    patientId={patientId}
+                    onClose={() => setCheckoutConsultation(null)}
+                    onSuccess={handleCheckoutSuccess}
+                />
+            )}
         </div>
     );
 };

@@ -84,6 +84,17 @@ namespace OpticBackend.Services
                     }
                 }
 
+                // 4. Update parent items modification dates so they appear in Recent views
+                var consultaRef = await _context.Consultas.FindAsync(sale.ConsultaId);
+                if (consultaRef != null) 
+                {
+                    consultaRef.FechaActualizacion = DateTime.UtcNow;
+                    var pacienteRef = await _context.Pacientes.FindAsync(consultaRef.PacienteId);
+                    if (pacienteRef != null) {
+                        pacienteRef.FechaActualizacion = DateTime.UtcNow;
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -115,6 +126,96 @@ namespace OpticBackend.Services
                 .Where(s => s.Consulta.PacienteId == patientId || s.Detalles.Any(d => d.PacienteId == patientId))
                 .OrderByDescending(s => s.Fecha)
                 .ToListAsync();
+        }
+
+        public async Task<Sale?> UpdateSaleAsync(Guid id, UpdateSaleDto model)
+        {
+            var sale = await _context.Ventas.FindAsync(id);
+            if (sale == null) return null;
+
+            if (model.FolioFisico != null) sale.FolioFisico = model.FolioFisico;
+            if (model.TotalVenta.HasValue) sale.TotalVenta = model.TotalVenta.Value;
+            if (model.SaldoPendiente.HasValue) sale.SaldoPendiente = model.SaldoPendiente.Value;
+            if (model.ObservacionesGenerales != null) sale.ObservacionesGenerales = model.ObservacionesGenerales;
+
+            await _context.SaveChangesAsync();
+
+            return await GetSaleByIdAsync(id);
+        }
+
+        // --- MANEJO DE ABONOS ---
+
+        private async Task RecalculateSaleBalanceAsync(Guid saleId)
+        {
+            var sale = await _context.Ventas
+                .Include(s => s.Abonos)
+                .FirstOrDefaultAsync(s => s.Id == saleId);
+
+            if (sale != null && sale.TotalVenta.HasValue)
+            {
+                decimal totalPagado = sale.Abonos?.Sum(a => a.Monto) ?? 0;
+                sale.SaldoPendiente = sale.TotalVenta.Value - totalPagado;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<Sale?> AddPaymentAsync(Guid saleId, CreatePaymentDto model)
+        {
+            var sale = await _context.Ventas.FindAsync(saleId);
+            if (sale == null) return null;
+
+            var payment = new Payment
+            {
+                VentaId = saleId,
+                Monto = model.Monto,
+                FechaPago = model.FechaPago ?? DateTime.UtcNow,
+                MetodoPago = model.MetodoPago,
+                UsuarioId = model.UsuarioId
+            };
+
+            if (payment.FechaPago.Value.Kind == DateTimeKind.Unspecified)
+                payment.FechaPago = DateTime.SpecifyKind(payment.FechaPago.Value, DateTimeKind.Utc);
+
+            _context.Abonos.Add(payment);
+            await _context.SaveChangesAsync();
+
+            await RecalculateSaleBalanceAsync(saleId);
+            
+            return await GetSaleByIdAsync(saleId);
+        }
+
+        public async Task<Sale?> UpdatePaymentAsync(Guid saleId, Guid paymentId, UpdatePaymentDto model)
+        {
+            var payment = await _context.Abonos.FirstOrDefaultAsync(p => p.Id == paymentId && p.VentaId == saleId);
+            if (payment == null) return null;
+
+            if (model.Monto.HasValue) payment.Monto = model.Monto.Value;
+            if (model.FechaPago.HasValue) 
+            {
+                payment.FechaPago = model.FechaPago.Value.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(model.FechaPago.Value, DateTimeKind.Utc) 
+                    : model.FechaPago.Value;
+            }
+            if (model.MetodoPago != null) payment.MetodoPago = model.MetodoPago;
+
+            await _context.SaveChangesAsync();
+
+            await RecalculateSaleBalanceAsync(saleId);
+
+            return await GetSaleByIdAsync(saleId);
+        }
+
+        public async Task<Sale?> DeletePaymentAsync(Guid saleId, Guid paymentId)
+        {
+            var payment = await _context.Abonos.FirstOrDefaultAsync(p => p.Id == paymentId && p.VentaId == saleId);
+            if (payment == null) return null;
+
+            _context.Abonos.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            await RecalculateSaleBalanceAsync(saleId);
+
+            return await GetSaleByIdAsync(saleId);
         }
     }
 }

@@ -11,7 +11,7 @@ const ConsultationsContent = ({ onNavigate }) => {
     return (
         <div className="consultations-container">
             <div className="consultations-header">
-                <h2><span className="icon">🩺</span> Consultas Clínicas</h2>
+                <h2><span className="icon">🩺</span> Consultas</h2>
                 <div className="header-actions">
                     <button className="btn-secondary" onClick={() => openWizard('medical')}>+ Nueva Consulta Médica</button>
                     <button className="btn-primary" onClick={() => openWizard('glasses')}>+ Nueva Consulta (Lentes)</button>

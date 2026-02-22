@@ -84,9 +84,27 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// --- 2. SEEDING (USUARIOS y ROLES MAESTROS) ---
+// --- 2. SEEDING Y MIGRACIONES AUTOMÁTICAS ---
 using (var scope = app.Services.CreateScope())
 {
+    var _context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+    // Inyectar las columnas de actualización si no existen (PostgreSQL nativo)
+    try
+    {
+            await _context.Database.ExecuteSqlRawAsync(@"
+                ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE consultas ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE consultas ADD COLUMN IF NOT EXISTS tipo_consulta VARCHAR(20) DEFAULT 'consulta_lentes';
+                UPDATE consultas SET tipo_consulta = 'consulta_lentes' WHERE tipo_consulta IS NULL;
+            ");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "Could not run automatic migrations for modification dates.");
+    }
+
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     

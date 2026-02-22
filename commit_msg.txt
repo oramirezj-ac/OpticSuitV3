@@ -1,0 +1,18 @@
+feat: Add Medical Checkout & Sales/Payments CRUD
+
+- Database & Models:
+  - Added `tipo_consulta` to Consultation table to distinguish Lenses vs Medical.
+  - Updated controllers and models to automatically update `FechaActualizacion` when related children change.
+
+- Consultations & Patient UI:
+  - Split Patient Details consultations into two distinct tabs ("Lentes" and "Médicas").
+  - Modified Consultation form payloads to pass the correct consultation type.
+  - Added "Medical Checkout" modal `MedicalCheckoutModal.jsx` to quickly charge medical fees and medication directly to Sales table.
+
+- Sales & Payments CRUD:
+  - Added backend PUT endpoint and `UpdateSaleDto` to allow retroactive edits to Sale headers (Folio, Totals, Observations).
+  - Built nested `SalesService` logic and endpoints for Payment CRUD (Add, Edit, Delete).
+  - Implemented automatic balance recalculation (`SaldoPendiente`) when Payments change.
+  - Added `EditSaleModal.jsx` and `PaymentModal.jsx`. 
+  - Upgraded `SaleDetailModal.jsx` to act as an interactive manager for note and payment modifications.
+  - Improved UX by auto-filling the remaining balance when creating a new payment and preventing the modal from closing after modifications.

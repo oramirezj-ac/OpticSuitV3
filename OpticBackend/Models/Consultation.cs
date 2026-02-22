@@ -21,9 +21,16 @@ namespace OpticBackend.Models
         [Column("fecha")]
         public DateTime Fecha { get; set; } = DateTime.Now;
 
+        [Column("fecha_actualizacion")]
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+
         [Column("motivo_consulta")]
         [MaxLength(50)]
         public string? MotivoConsulta { get; set; } = "Refractiva";
+
+        [Column("tipo_consulta")]
+        [MaxLength(20)]
+        public string TipoConsulta { get; set; } = "consulta_lentes";
 
         [Column("observaciones")]
         public string? Observaciones { get; set; }

@@ -33,6 +33,7 @@ namespace OpticBackend.Controllers
                 {
                     PacienteId = model.PacienteId,
                     Fecha = model.Fecha ?? DateTime.Now,
+                    TipoConsulta = !string.IsNullOrEmpty(model.TipoConsulta) ? model.TipoConsulta : "consulta_lentes",
                     MotivoConsulta = model.MotivoConsulta,
                     Observaciones = model.Observaciones,
                     CostoServicio = model.CostoServicio,
@@ -43,6 +44,13 @@ namespace OpticBackend.Controllers
 
                 if (consulta.Fecha.Kind == DateTimeKind.Unspecified)
                     consulta.Fecha = DateTime.SpecifyKind(consulta.Fecha, DateTimeKind.Utc);
+                
+                consulta.FechaActualizacion = DateTime.UtcNow;
+
+                var pacienteRef = await _context.Pacientes.FindAsync(model.PacienteId);
+                if (pacienteRef != null) {
+                    pacienteRef.FechaActualizacion = DateTime.UtcNow;
+                }
 
                 _context.Consultas.Add(consulta);
                 await _context.SaveChangesAsync();
@@ -153,11 +161,18 @@ namespace OpticBackend.Controllers
 
         // GET: api/consultations/recent
         [HttpGet("recent")]
-        public async Task<ActionResult<IEnumerable<Consultation>>> GetRecentConsultations([FromQuery] int count = 15)
+        public async Task<ActionResult<IEnumerable<Consultation>>> GetRecentConsultations([FromQuery] int count = 15, [FromQuery] string? tipo = null)
         {
-            var consultations = await _context.Consultas
+            var query = _context.Consultas.AsQueryable();
+
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                query = query.Where(c => c.TipoConsulta == tipo);
+            }
+
+            var consultations = await query
                 .Include(c => c.Paciente)
-                .OrderByDescending(c => c.Fecha)
+                .OrderByDescending(c => c.FechaActualizacion)
                 .Take(count)
                 .ToListAsync();
 
@@ -166,12 +181,18 @@ namespace OpticBackend.Controllers
 
         // GET: api/consultations/patient/{patientId}
         [HttpGet("patient/{patientId}")]
-        public async Task<ActionResult<IEnumerable<Consultation>>> GetPatientConsultations(Guid patientId)
+        public async Task<ActionResult<IEnumerable<Consultation>>> GetPatientConsultations(Guid patientId, [FromQuery] string? tipo = null)
         {
-            var consultations = await _context.Consultas
-                .Where(c => c.PacienteId == patientId)
+            var query = _context.Consultas.Where(c => c.PacienteId == patientId);
+
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                query = query.Where(c => c.TipoConsulta == tipo);
+            }
+
+            var consultations = await query
                 .Include(c => c.Graduaciones)
-                .OrderByDescending(c => c.Fecha)
+                .OrderByDescending(c => c.FechaActualizacion)
                 .ToListAsync();
 
             return Ok(consultations);

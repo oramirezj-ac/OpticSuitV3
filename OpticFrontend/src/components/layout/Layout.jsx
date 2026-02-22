@@ -52,7 +52,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                                 className={activePage === 'consultations' ? 'active' : ''}
                                 onClick={(e) => { e.preventDefault(); onNavigate('consultations'); }}
                             >
-                                <span className="icon">🩺</span> Consultas Clínicas
+                                <span className="icon">🩺</span> Consultas
                             </a>
                         </li>
 
