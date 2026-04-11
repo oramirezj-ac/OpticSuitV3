@@ -24,7 +24,7 @@ const SystemCustomization = ({ onNavigate }) => {
 
     // Check role and load schemas
     useEffect(() => {
-        const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+        const roles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
         if (roles.includes('Root')) {
             setIsRoot(true);
             fetchSchemas();
@@ -38,7 +38,7 @@ const SystemCustomization = ({ onNavigate }) => {
 
     const fetchSchemas = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const res = await fetch('/api/configuracion/schemas', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -62,7 +62,7 @@ const SystemCustomization = ({ onNavigate }) => {
         if (targetTenant) {
             setLoading(true);
             try {
-                const token = localStorage.getItem('token');
+                const token = sessionStorage.getItem('token');
                 const res = await fetch('/api/configuracion', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -107,7 +107,7 @@ const SystemCustomization = ({ onNavigate }) => {
         setLoading(true);
         setMessage(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

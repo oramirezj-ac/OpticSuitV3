@@ -15,8 +15,8 @@ export const ConfigProvider = ({ children }) => {
     const fetchConfig = () => {
         console.log('🔄 [ConfigContext] Iniciando carga de configuración...');
 
-        // ✅ Obtener token JWT de localStorage
-        const token = localStorage.getItem('token');
+        // ✅ Obtener token JWT de sessionStorage
+        const token = sessionStorage.getItem('token');
 
         if (!token) {
             console.warn('⚠️ [ConfigContext] No hay token, usando configuración por defecto');
