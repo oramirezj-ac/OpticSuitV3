@@ -83,4 +83,4 @@ Upon first run, the system seeds the following users:
 *   **Optos (Tenant Admin):**
     *   Email: `test@opticsuit.com`
     *   Password: `Password123!`
-    *   *Schema: public_test*
+    *   *Schema: sandbox*

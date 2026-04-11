@@ -105,11 +105,11 @@ namespace OpticBackend.Controllers
             }
 
             // Asignar Rol
-            // Si es Admin creando usuario, no puede crear Roots, solo Admins o Vendedores
+            // Si es Admin creando usuario, no puede crear Roots ni Admins, solo Vendedores
             var targetRole = model.Rol;
-            if (!isRoot && targetRole == "Root") 
+            if (!isRoot && (targetRole == "Root" || targetRole == "Admin")) 
             {
-                targetRole = "Vendedor"; // Downgrade forzoso si intenta pasarse de listo
+                return BadRequest(new[] { new IdentityError { Description = "Solo Root puede crear usuarios Administradores." } });
             }
 
             if (await _roleManager.RoleExistsAsync(targetRole))
@@ -166,10 +166,10 @@ namespace OpticBackend.Controllers
 
             if (currentRole != model.Rol)
             {
-                // Validación de jerarquía: Admin no puede asignar rol Root
-                if (!isRoot && model.Rol == "Root")
+                // Validación de jerarquía: Admin no puede asignar rol Root ni Admin
+                if (!isRoot && (model.Rol == "Root" || model.Rol == "Admin"))
                 {
-                    return BadRequest("No tienes permisos para asignar el rol Root.");
+                    return BadRequest(new[] { new IdentityError { Description = "No tienes permisos para asignar el rol Root o Admin." } });
                 }
 
                 if (!string.IsNullOrEmpty(currentRole))

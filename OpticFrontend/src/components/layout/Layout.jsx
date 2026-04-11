@@ -3,8 +3,8 @@ import './Layout.css';
 
 const Layout = ({ children, onLogout, activePage, onNavigate }) => {
     const { config } = useConfig();
-    const userEmail = localStorage.getItem('userEmail') || 'Usuario';
-    const userRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+    const userEmail = sessionStorage.getItem('userEmail') || 'Usuario';
+    const userRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
 
     // Check if user is Root or Admin
     const canManageUsers = userRoles.includes('Root') || userRoles.includes('Admin');

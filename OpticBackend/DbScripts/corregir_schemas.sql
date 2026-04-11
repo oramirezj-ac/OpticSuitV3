@@ -1,13 +1,13 @@
 -- ============================================
--- CORRECCIÓN: Usar public_test en lugar de optica_test
+-- CORRECCIÓN: Usar sandbox en lugar de optica_test
 -- ============================================
 
 -- 1. ELIMINAR schema optica_test (creado por error)
 DROP SCHEMA IF EXISTS optica_test CASCADE;
 
--- 2. ACTUALIZAR usuario test para usar public_test
+-- 2. ACTUALIZAR usuario test para usar sandbox
 UPDATE public."AspNetUsers" 
-SET "NombreEsquema" = 'public_test'
+SET "NombreEsquema" = 'sandbox'
 WHERE "Email" = 'test@opticsuit.com';
 
 -- 3. VERIFICAR resultado

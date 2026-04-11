@@ -149,7 +149,7 @@ using (var scope = app.Services.CreateScope())
             UserName = testEmail, 
             Email = testEmail, 
             NombreCompleto = "Usuario de Prueba",
-            NombreEsquema = "public_test", 
+            NombreEsquema = "sandbox", 
             EmailConfirmed = true 
         };
         await userManager.CreateAsync(testUser, "Password123!");

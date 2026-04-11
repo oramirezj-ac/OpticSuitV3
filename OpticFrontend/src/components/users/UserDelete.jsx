@@ -4,7 +4,7 @@ import DeleteConfirmation from '../common/DeleteConfirmation';
 const UserDelete = ({ userId, userName, onBack, onSuccess }) => {
 
     const handleDelete = async () => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const response = await fetch(`/api/users/${userId}`, {
             method: 'DELETE',
             headers: {

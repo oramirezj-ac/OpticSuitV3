@@ -11,8 +11,8 @@ const UsersIndex = ({ onNavigate }) => {
     const [showModal, setShowModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
-    // Identificar rol del usuario actual desde localStorage
-    const savedRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+    // Identificar rol del usuario actual desde sessionStorage
+    const savedRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
     const isRoot = savedRoles.includes('Root');
 
     useEffect(() => {
@@ -21,7 +21,7 @@ const UsersIndex = ({ onNavigate }) => {
 
     const fetchUsers = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const response = await fetch('/api/users', {
                 headers: {
                     'Authorization': `Bearer ${token}`

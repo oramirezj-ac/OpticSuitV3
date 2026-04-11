@@ -39,7 +39,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const method = user ? 'PUT' : 'POST';
             const url = user ? `/api/users/${user.id}` : '/api/users';
 
@@ -124,7 +124,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
 
                         <div className="form-row">
                             {/* Check if editing self */}
-                            {user && user.email === localStorage.getItem('userEmail') ? (
+                            {user && user.email === sessionStorage.getItem('userEmail') ? (
                                 /* Hidden field for self-edit to prevent role change */
                                 <div className="form-group col" style={{ display: 'none' }}>
                                     <input type="hidden" name="rol" value={formData.rol} />
@@ -155,7 +155,9 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
                                         onChange={handleChange}
                                     >
                                         <option value="public">public (Global)</option>
-                                        <option value="public_test">public_test</option>
+                                        <option value="sandbox">sandbox (Pruebas)</option>
+                                        {/* <option value="galileo">Óptica Galileo</option> */}
+                                        {/* <option value="san_gabriel">Óptica San Gabriel</option> */}
                                         {/* Add dynamic schemas later */}
                                     </select>
                                 </div>
