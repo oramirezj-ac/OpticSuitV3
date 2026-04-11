@@ -1,10 +1,11 @@
 import { useConfig } from '../../context/ConfigContext';
+import { authService } from '../../services/authService';
 import './Layout.css';
 
 const Layout = ({ children, onLogout, activePage, onNavigate }) => {
     const { config } = useConfig();
-    const userEmail = sessionStorage.getItem('userEmail') || 'Usuario';
-    const userRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
+    const userEmail = authService.getUserEmail();
+    const userRoles = authService.getUserRoles();
 
     // Check if user is Root or Admin
     const canManageUsers = userRoles.includes('Root') || userRoles.includes('Admin');

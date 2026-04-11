@@ -5,25 +5,19 @@ import { apiClient } from '../../../services/apiClient';
 import EditSaleModal from './EditSaleModal';
 import PaymentModal from './PaymentModal';
 
-const SaleDetailModal = ({ sale, onClose, onSaleUpdated }) => {
+const SaleDetailModal = ({ sale, patientId, onClose, onSaleUpdated, onNavigate }) => {
     const [isEditing, setIsEditing] = useState(false);
 
     // State for Payment Modal (if null, modal is closed; if {}, adding new; if {...} editing existing)
     const [selectedPayment, setSelectedPayment] = useState(null);
 
-    const handleDeletePayment = async (paymentId) => {
-        if (!window.confirm("¿Estás seguro de que deseas eliminar este abono? El saldo se recalculará.")) {
-            return;
-        }
-
-        try {
-            const response = await apiClient.delete(`/api/sales/${sale.id}/payments/${paymentId}`);
-            if (response && response.id) {
-                if (onSaleUpdated) onSaleUpdated(response);
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Error al eliminar el abono.");
+    const handleDeletePayment = (paymentId) => {
+        if (onNavigate) {
+            onNavigate('payment-delete', { 
+                saleId: sale.id, 
+                paymentId: paymentId, 
+                patientId: patientId 
+            });
         }
     };
 

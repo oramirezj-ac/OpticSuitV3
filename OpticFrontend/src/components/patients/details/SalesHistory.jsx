@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import { formatCurrency } from '../../../utils/formatUtils';
 
-const SalesHistory = ({ sales, loading, onNavigate, onSelectSale }) => {
+const SalesHistory = ({ sales, loading, onNavigate, onSelectSale, onDeleteSale }) => {
     return (
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
@@ -59,6 +59,15 @@ const SalesHistory = ({ sales, loading, onNavigate, onSelectSale }) => {
                                                 >
                                                     Ver Nota
                                                 </button>
+                                                {onDeleteSale && (
+                                                    <button 
+                                                        className="btn text-xs py-1 px-3 ml-2" 
+                                                        style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                                                        onClick={() => onDeleteSale(s.id)}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );

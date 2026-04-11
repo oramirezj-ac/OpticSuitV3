@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
+import { authService } from '../../../services/authService';
 import DiopterInput from '../../common/DiopterInput';
 
 const Step3_Graduation = () => {
@@ -15,7 +16,7 @@ const Step3_Graduation = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = authService.getToken();
             const parseIntVal = (val) => val === '' ? null : parseInt(val);
 
             // FIX: Correctly handle 0 values. parseFloat("0") is 0, which is falsy in JS checks like (!val)

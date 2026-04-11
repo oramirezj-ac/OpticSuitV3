@@ -9,6 +9,7 @@ namespace OpticBackend.Services.Interfaces
         Task<IEnumerable<Sale>> GetSalesByPatientAsync(Guid patientId);
         Task<Sale?> GetSaleByIdAsync(Guid id);
         Task<Sale?> UpdateSaleAsync(Guid id, UpdateSaleDto model);
+        Task<bool> DeleteSaleAsync(Guid id);
 
         // Pagos / Abonos
         Task<Sale?> AddPaymentAsync(Guid saleId, CreatePaymentDto model);

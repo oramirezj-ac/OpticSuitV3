@@ -329,7 +329,7 @@ namespace OpticBackend.Controllers
 
         // DELETE: api/patients/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePatient(Guid id) // Changed to Guid
+        public async Task<IActionResult> DeletePatient(Guid id)
         {
             try 
             {
@@ -337,6 +337,17 @@ namespace OpticBackend.Controllers
                 if (patient == null)
                 {
                     return NotFound();
+                }
+
+                var consultasCount = await _context.Consultas.CountAsync(c => c.PacienteId == id);
+                var ventasCount = await _context.DetalleVentas.CountAsync(d => d.PacienteId == id);
+
+                if (consultasCount > 0 || ventasCount > 0)
+                {
+                    return Conflict(new { 
+                        message = "No se puede eliminar porque existen registros en su expediente.",
+                        counts = new { consultas = consultasCount, ventas = ventasCount }
+                    });
                 }
 
                 _context.Pacientes.Remove(patient);
@@ -347,7 +358,7 @@ namespace OpticBackend.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar paciente {Id}", id);
-                return StatusCode(500, new { message = "No se puede eliminar el paciente, es posible que tenga consultas o ventas asociadas." });
+                return StatusCode(500, new { message = "Ocurrió un error al intentar eliminar el paciente." });
             }
         }
 

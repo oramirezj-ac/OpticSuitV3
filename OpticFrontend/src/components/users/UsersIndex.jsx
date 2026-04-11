@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import UserForm from './UserForm';
+import { authService } from '../../services/authService';
 import './UsersIndex.css';
 
 const UsersIndex = ({ onNavigate }) => {
@@ -11,8 +12,8 @@ const UsersIndex = ({ onNavigate }) => {
     const [showModal, setShowModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
-    // Identificar rol del usuario actual desde sessionStorage
-    const savedRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
+    // Identificar rol del usuario actual desde authService
+    const savedRoles = authService.getUserRoles();
     const isRoot = savedRoles.includes('Root');
 
     useEffect(() => {
@@ -21,7 +22,7 @@ const UsersIndex = ({ onNavigate }) => {
 
     const fetchUsers = async () => {
         try {
-            const token = sessionStorage.getItem('token');
+            const token = authService.getToken();
             const response = await fetch('/api/users', {
                 headers: {
                     'Authorization': `Bearer ${token}`

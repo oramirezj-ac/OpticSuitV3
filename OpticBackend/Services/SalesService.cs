@@ -84,14 +84,34 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 4. Update parent items modification dates so they appear in Recent views
-                var consultaRef = await _context.Consultas.FindAsync(sale.ConsultaId);
-                if (consultaRef != null) 
+                // 3.5 Create Commissions (Comisiones)
+                if (model.Comisiones != null && model.Comisiones.Any())
                 {
-                    consultaRef.FechaActualizacion = DateTime.UtcNow;
-                    var pacienteRef = await _context.Pacientes.FindAsync(consultaRef.PacienteId);
-                    if (pacienteRef != null) {
-                        pacienteRef.FechaActualizacion = DateTime.UtcNow;
+                    foreach (var com in model.Comisiones)
+                    {
+                        var commission = new SalesCommission
+                        {
+                            VentaId = sale.Id,
+                            UsuarioId = com.UsuarioId,
+                            MontoComision = com.MontoComision,
+                            PuntosVenta = com.PuntosVenta,
+                            FechaRegistro = DateTime.UtcNow
+                        };
+                        _context.ComisionesVentas.Add(commission);
+                    }
+                }
+
+                // 4. Update parent items modification dates so they appear in Recent views
+                if (sale.ConsultaId.HasValue)
+                {
+                    var consultaRef = await _context.Consultas.FindAsync(sale.ConsultaId.Value);
+                    if (consultaRef != null) 
+                    {
+                        consultaRef.FechaActualizacion = DateTime.UtcNow;
+                        var pacienteRef = await _context.Pacientes.FindAsync(consultaRef.PacienteId);
+                        if (pacienteRef != null) {
+                            pacienteRef.FechaActualizacion = DateTime.UtcNow;
+                        }
                     }
                 }
 
@@ -143,7 +163,35 @@ namespace OpticBackend.Services
             return await GetSaleByIdAsync(id);
         }
 
-        // --- MANEJO DE ABONOS ---
+        public async Task<bool> DeleteSaleAsync(Guid id)
+        {
+            var sale = await _context.Ventas.FindAsync(id);
+            if (sale == null) return false;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var payments = await _context.Abonos.Where(a => a.VentaId == id).ToListAsync();
+                _context.Abonos.RemoveRange(payments);
+
+                var details = await _context.DetalleVentas.Where(d => d.VentaId == id).ToListAsync();
+                _context.DetalleVentas.RemoveRange(details);
+
+                _context.Ventas.Remove(sale);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error cascading delete for sale {Id}", id);
+                throw;
+            }
+        }
+
+        // --- ABONOS / PAGOS ---
 
         private async Task RecalculateSaleBalanceAsync(Guid saleId)
         {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useConfig } from '../../context/ConfigContext';
+import { authService } from '../../services/authService';
+import { apiClient } from '../../services/apiClient';
 
 const SystemCustomization = ({ onNavigate }) => {
     const { config, reloadConfig } = useConfig();
@@ -24,7 +26,7 @@ const SystemCustomization = ({ onNavigate }) => {
 
     // Check role and load schemas
     useEffect(() => {
-        const roles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
+        const roles = authService.getUserRoles();
         if (roles.includes('Root')) {
             setIsRoot(true);
             fetchSchemas();
@@ -38,14 +40,8 @@ const SystemCustomization = ({ onNavigate }) => {
 
     const fetchSchemas = async () => {
         try {
-            const token = sessionStorage.getItem('token');
-            const res = await fetch('/api/configuracion/schemas', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const list = await res.json();
-                setSchemas(list);
-            }
+            const list = await apiClient.get('/api/configuracion/schemas');
+            setSchemas(list);
         } catch (err) {
             console.error("Error fetching schemas", err);
         }
@@ -62,22 +58,13 @@ const SystemCustomization = ({ onNavigate }) => {
         if (targetTenant) {
             setLoading(true);
             try {
-                const token = sessionStorage.getItem('token');
-                const res = await fetch('/api/configuracion', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'X-Tenant-ID': targetTenant
-                    }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    populateForm(data);
-                } else {
-                    // Reset if not found (new config)
-                    populateForm({});
-                }
+                const headers = { 'X-Tenant-ID': targetTenant };
+                const data = await apiClient.get('/api/configuracion', headers);
+                populateForm(data);
             } catch (err) {
                 console.error(err);
+                // Reset if not found (new config)
+                populateForm({});
             } finally {
                 setLoading(false);
             }
@@ -107,11 +94,7 @@ const SystemCustomization = ({ onNavigate }) => {
         setLoading(true);
         setMessage(null);
         try {
-            const token = sessionStorage.getItem('token');
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            };
+            const headers = {};
 
             // Inject Override Header if Root selected a tenant
             if (targetTenant) {
@@ -124,26 +107,17 @@ const SystemCustomization = ({ onNavigate }) => {
                 delete payload.id;
             }
 
-            const response = await fetch('/api/configuracion', {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(payload)
-            });
+            await apiClient.put('/api/configuracion', payload, headers);
+            
+            setMessage({ type: 'success', text: `¡Configuración guardada para ${targetTenant || 'tu óptica'}!` });
 
-            if (response.ok) {
-                const updated = await response.json();
-                setMessage({ type: 'success', text: `¡Configuración guardada para ${targetTenant || 'tu óptica'}!` });
-
-                // Only reload global context if we edited OUR OWN tenant
-                if (!targetTenant) {
-                    if (reloadConfig) reloadConfig();
-                }
-            } else {
-                setMessage({ type: 'error', text: 'Error al guardar la configuración.' });
+            // Only reload global context if we edited OUR OWN tenant
+            if (!targetTenant) {
+                if (reloadConfig) reloadConfig();
             }
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: 'Error de conexión.' });
+            setMessage({ type: 'error', text: error.message || 'Error al guardar la configuración.' });
         } finally {
             setLoading(false);
         }

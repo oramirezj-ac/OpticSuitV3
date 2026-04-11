@@ -1,13 +1,10 @@
-/**
- * API Client - Servicio centralizado para llamadas HTTP
- * Maneja autenticación, headers y manejo de errores de forma consistente
- */
+import { authService } from './authService';
 
 /**
- * Obtiene el token de autenticación del localStorage
+ * Obtiene el token de autenticación del sessionStorage (vía authService)
  * @returns {string|null} Token de autenticación
  */
-const getAuthToken = () => sessionStorage.getItem('token');
+const getAuthToken = () => authService.getToken();
 
 /**
  * Maneja la respuesta de la API de forma consistente
@@ -18,14 +15,19 @@ const handleResponse = async (response) => {
     if (!response.ok) {
         let errorMessage = 'Error en la petición';
         try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorData.title || JSON.stringify(errorData);
-        } catch {
-            try {
-                errorMessage = await response.text();
-            } catch {
+            const rawText = await response.text();
+            if (rawText) {
+                try {
+                    const errorData = JSON.parse(rawText);
+                    errorMessage = errorData.message || errorData.title || JSON.stringify(errorData);
+                } catch(e) {
+                    errorMessage = rawText;
+                }
+            } else {
                 errorMessage = `Error ${response.status}: ${response.statusText}`;
             }
+        } catch {
+            errorMessage = `Error ${response.status}: ${response.statusText}`;
         }
         throw new Error(errorMessage);
     }

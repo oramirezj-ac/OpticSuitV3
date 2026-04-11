@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
+import { authService } from '../../../services/authService';
 
 const Step2_Consultation = () => {
     const {
@@ -14,7 +15,7 @@ const Step2_Consultation = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = authService.getToken();
             const response = await fetch('/api/consultations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

@@ -1,10 +1,11 @@
 import React from 'react';
+import { authService } from '../../services/authService';
 import DeleteConfirmation from '../common/DeleteConfirmation';
 
 const UserDelete = ({ userId, userName, onBack, onSuccess }) => {
 
     const handleDelete = async () => {
-        const token = sessionStorage.getItem('token');
+        const token = authService.getToken();
         const response = await fetch(`/api/users/${userId}`, {
             method: 'DELETE',
             headers: {

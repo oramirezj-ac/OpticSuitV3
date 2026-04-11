@@ -216,6 +216,18 @@ a:hover {
   color: var(--slate-700);
 }
 
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.form-row > .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 10px 14px;

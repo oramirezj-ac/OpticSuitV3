@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 
-const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheckout }) => {
+const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheckout, onDelete }) => {
     return (
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
@@ -63,6 +63,15 @@ const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheck
                                                 <button className="btn btn-secondary text-xs py-1 px-3">
                                                     Ver Detalles
                                                 </button>
+                                                {onDelete && (
+                                                    <button 
+                                                        className="btn text-xs py-1 px-3 ml-2" 
+                                                        style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                                                        onClick={() => onDelete(c.id)}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );

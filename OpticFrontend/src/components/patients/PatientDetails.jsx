@@ -37,6 +37,18 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
         refreshData();
     };
 
+    const handleDeleteConsultation = async (id) => {
+        if (onNavigate) {
+            onNavigate('consultation-delete', { consultationId: id, patientId: patientId });
+        }
+    };
+
+    const handleDeleteSale = async (id) => {
+        if (onNavigate) {
+            onNavigate('sale-delete', { saleId: id, patientId: patientId });
+        }
+    };
+
     if (loading) return <div className="loading-container"><div className="loader"></div></div>;
     if (error) return <div className="alert alert-danger">Error: {error} <button onClick={onBack}>Regresar</button></div>;
     if (!patient) return <div>No se encontró el paciente.</div>;
@@ -86,6 +98,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                         consultations={consultations}
                         loading={loadingTab}
                         onNavigate={onNavigate}
+                        onDelete={handleDeleteConsultation}
                     />
                 )}
 
@@ -96,6 +109,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                         loading={loadingTab}
                         onNavigate={onNavigate}
                         onCheckout={setCheckoutConsultation}
+                        onDelete={handleDeleteConsultation}
                     />
                 )}
 
@@ -105,6 +119,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                         loading={loadingTab}
                         onNavigate={onNavigate}
                         onSelectSale={setSelectedSale}
+                        onDeleteSale={handleDeleteSale}
                     />
                 )}
             </div>
@@ -112,8 +127,10 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
             {/* SALE DETAILS MODAL */}
             <SaleDetailModal
                 sale={selectedSale}
+                patientId={patientId}
                 onClose={() => setSelectedSale(null)}
                 onSaleUpdated={handleSaleUpdated}
+                onNavigate={onNavigate}
             />
 
             {/* MEDICAL CHECKOUT MODAL */}

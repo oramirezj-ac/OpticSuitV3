@@ -76,6 +76,24 @@ namespace OpticBackend.Controllers
             }
         }
 
+        // DELETE: api/sales/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSale(Guid id)
+        {
+            try
+            {
+                var result = await _salesService.DeleteSaleAsync(id);
+                if (!result) return NotFound(new { message = "Venta no encontrada" });
+
+                return Ok(new { message = "Venta eliminada correctamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting sale");
+                return StatusCode(500, new { message = "Ocurrió un error al eliminar la venta" });
+            }
+        }
+
         // --- ENDPOINTS DE ABONOS ---
 
         // POST: api/sales/{saleId}/payments

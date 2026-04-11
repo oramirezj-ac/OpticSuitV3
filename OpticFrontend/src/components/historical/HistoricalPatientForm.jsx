@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import './HistoricalCapture.css'; // Reutilizamos estilos del contenedor de captura
+import { authService } from '../../services/authService';
+import { apiClient } from '../../services/apiClient';
+import './HistoricalCapture.css';
 
 const HistoricalPatientForm = ({ onPatientSelected }) => {
     // Estado del formulario independiente
@@ -64,7 +66,7 @@ const HistoricalPatientForm = ({ onPatientSelected }) => {
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
+            const token = authService.getToken();
             const url = '/api/patients';
             const payload = { ...formData };
             delete payload.edad; // No se envía al backend
@@ -122,7 +124,7 @@ const HistoricalPatientForm = ({ onPatientSelected }) => {
                 const oldDate = new Date(existingPatient.fechaRegistro);
 
                 if (newDate < oldDate) {
-                    const token = localStorage.getItem('token');
+                    const token = authService.getToken();
                     const updatePayload = {
                         ...existingPatient, // Usamos datos existentes
                         fechaRegistro: formData.fechaRegistro // Solo cambiamos la fecha por la más antigua
@@ -215,11 +217,11 @@ const HistoricalPatientForm = ({ onPatientSelected }) => {
             </div>
 
             <div className="form-row">
-                <div className="form-group">
+                <div className="form-group" style={{ flex: 1 }}>
                     <label>Teléfono</label>
                     <input type="text" name="telefono" className="form-input" value={formData.telefono} onChange={handleChange} />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{ flex: 2 }}>
                     <label>Dirección</label>
                     <input type="text" name="direccion" className="form-input" value={formData.direccion} onChange={handleChange} />
                 </div>

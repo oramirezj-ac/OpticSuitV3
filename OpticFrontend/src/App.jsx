@@ -9,8 +9,12 @@ import PatientDelete from './components/patients/PatientDelete';
 import PatientDetails from './components/patients/PatientDetails';
 import HistoricalCapture from './components/historical/HistoricalCapture';
 import ConsultationsIndex from './components/consultations/ConsultationsIndex';
+import ConsultationDelete from './components/consultations/ConsultationDelete';
+import SaleDelete from './components/sales/SaleDelete';
+import PaymentDelete from './components/sales/PaymentDelete';
 import SystemCustomization from './components/admin/SystemCustomization';
 import useIdleTimeout from './hooks/useIdleTimeout';
+import { authService } from './services/authService';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,9 +23,8 @@ function App() {
   const [navigationParams, setNavigationParams] = useState({}); // Stores params like { userId: '123' }
 
   useEffect(() => {
-    // Check if token exists on load using sessionStorage
-    const token = sessionStorage.getItem('token');
-    if (token) {
+    // Check if token exists on load using authService
+    if (authService.isAuthenticated()) {
       setIsLoggedIn(true);
     }
     setCheckingAuth(false);
@@ -34,10 +37,7 @@ function App() {
 
   const handleLogout = () => {
     console.log('👋 [Auth] Cerrando sesión...');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userSchema');
-    sessionStorage.removeItem('userRoles');
+    authService.clearAuth();
     setIsLoggedIn(false);
     setCurrentPage('dashboard');
   };
@@ -78,6 +78,7 @@ function App() {
             patientName={navigationParams.patientName}
             onBack={() => handleNavigate('patients')}
             onSuccess={() => handleNavigate('patients')}
+            onNavigate={handleNavigate}
           />
         );
       case 'patient-details':
@@ -92,6 +93,31 @@ function App() {
         return <HistoricalCapture onNavigate={handleNavigate} />;
       case 'consultations':
         return <ConsultationsIndex onNavigate={handleNavigate} />;
+      case 'consultation-delete':
+        return (
+          <ConsultationDelete
+            consultationId={navigationParams.consultationId}
+            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+          />
+        );
+      case 'sale-delete':
+        return (
+          <SaleDelete
+            saleId={navigationParams.saleId}
+            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+          />
+        );
+      case 'payment-delete':
+        return (
+          <PaymentDelete
+            saleId={navigationParams.saleId}
+            paymentId={navigationParams.paymentId}
+            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+          />
+        );
       case 'customization':
         return <SystemCustomization onNavigate={handleNavigate} />;
       case 'dashboard':

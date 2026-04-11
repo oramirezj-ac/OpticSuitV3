@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '../services/apiClient';
 
 export const usePatientData = (patientId) => {
     const [patient, setPatient] = useState(null);
@@ -19,15 +20,7 @@ export const usePatientData = (patientId) => {
             if (!patientId) return;
             setLoading(true);
             try {
-                const token = localStorage.getItem('token');
-                // Note: In a real app, use a configured axios instance or fetch wrapper
-                const response = await fetch(`/api/patients/${patientId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error('Error al cargar expediente');
-
-                const data = await response.json();
+                const data = await apiClient.get(`/api/patients/${patientId}`);
                 setPatient(data);
             } catch (err) {
                 console.error(err);
@@ -47,7 +40,6 @@ export const usePatientData = (patientId) => {
 
             setLoadingTab(true);
             try {
-                const token = localStorage.getItem('token');
                 let url = '';
                 if (activeTab === 'consultations_lenses') {
                     url = `/api/consultations/patient/${patientId}?tipo=consulta_lentes`;
@@ -59,18 +51,12 @@ export const usePatientData = (patientId) => {
 
                 if (!url) return;
 
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const data = await apiClient.get(url);
 
-                if (response.ok) {
-                    const data = await response.json();
-
-                    if (activeTab === 'consultations_lenses' || activeTab === 'consultations_medical') {
-                        setConsultations(data.items || (Array.isArray(data) ? data : []));
-                    } else if (activeTab === 'sales') {
-                        setSales(data.items || (Array.isArray(data) ? data : []));
-                    }
+                if (activeTab === 'consultations_lenses' || activeTab === 'consultations_medical') {
+                    setConsultations(data.items || (Array.isArray(data) ? data : []));
+                } else if (activeTab === 'sales') {
+                    setSales(data.items || (Array.isArray(data) ? data : []));
                 }
             } catch (error) {
                 console.error("Error loading tab data", error);

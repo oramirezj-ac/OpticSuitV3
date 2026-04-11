@@ -15,7 +15,14 @@ namespace OpticBackend.Dtos.Sales
 
         public List<CreateSaleDetailDto> Detalles { get; set; } = new List<CreateSaleDetailDto>();
         public List<CreatePaymentDto> AbonosIniciales { get; set; } = new List<CreatePaymentDto>(); // Para registrar el pago/anticipo inicial
-        // public List<CreateCommissionDto>? Comisiones { get; set; } 
+        public List<CreateCommissionDto>? Comisiones { get; set; } 
+    }
+
+    public class CreateCommissionDto
+    {
+        public string UsuarioId { get; set; } = string.Empty;
+        public decimal MontoComision { get; set; } = 0;
+        public decimal PuntosVenta { get; set; } = 0;
     }
 
     public class CreateSaleDetailDto

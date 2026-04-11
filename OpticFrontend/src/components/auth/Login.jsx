@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useConfig } from '../../context/ConfigContext';
+import { authService } from '../../services/authService';
 import './Login.css';
 
 const Login = ({ onLoginSuccess }) => {
@@ -32,11 +33,8 @@ const Login = ({ onLoginSuccess }) => {
       if (response.ok) {
         const data = await response.json();
 
-        // Save to sessionStorage instead of localStorage
-        sessionStorage.setItem('token', data.token);
-        sessionStorage.setItem('userEmail', data.email);
-        sessionStorage.setItem('userSchema', data.schema);
-        sessionStorage.setItem('userRoles', JSON.stringify(data.roles)); // ✅ Guardar roles
+        // Save credentials centrally
+        authService.setAuth(data);
 
         setStatus({ type: 'success', message: `¡Bienvenido, ${data.nombreCompleto || 'Usuario'}!` });
 

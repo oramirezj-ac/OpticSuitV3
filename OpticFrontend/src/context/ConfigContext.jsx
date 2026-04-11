@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react';
+import { authService } from '../services/authService';
 
 const ConfigContext = createContext();
 
@@ -22,8 +23,8 @@ export const ConfigProvider = ({ children }) => {
     const fetchConfig = () => {
         console.log('🔄 [ConfigContext] Iniciando carga de configuración...');
 
-        // ✅ Obtener token JWT de sessionStorage
-        const token = sessionStorage.getItem('token');
+        // ✅ Obtener token JWT vía authService
+        const token = authService.getToken();
 
         if (!token) {
             console.warn('⚠️ [ConfigContext] No hay token, usando configuración por defecto');

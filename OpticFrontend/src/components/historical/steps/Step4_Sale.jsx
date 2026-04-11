@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useHistoricalCapture } from '../../../context/HistoricalCaptureContext';
+import { authService } from '../../../services/authService';
 import { formatDateLong } from '../../../utils/dateUtils';
 import { formatCurrency } from '../../../utils/formatUtils';
 
@@ -21,11 +22,27 @@ const Step4_Sale = () => {
 
     const [sellers, setSellers] = useState([]);
 
+    // Commission State
+    const [commissionSettings, setCommissionSettings] = useState({
+        amount: '',
+        vendor1: '',
+        vendor2: '',
+        showShared: false
+    });
+
+    const handleCommissionChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setCommissionSettings(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
     // Load available sellers (Users)
     useEffect(() => {
         const fetchSellers = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = authService.getToken();
                 const response = await fetch('/api/users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -78,9 +95,25 @@ const Step4_Sale = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = authService.getToken();
             const total = parseFloat(saleForm.total_venta) || 0;
             const saldo = total - totalPagado;
+
+            let comisionesPayload = [];
+            const dAmount = parseFloat(commissionSettings.amount) || 0;
+            if (dAmount > 0 && commissionSettings.vendor1) {
+                if (commissionSettings.showShared && commissionSettings.vendor2) {
+                    // Split 50/50
+                    const split = dAmount / 2;
+                    comisionesPayload.push({ usuarioId: commissionSettings.vendor1, montoComision: split, puntosVenta: 0 });
+                    if (commissionSettings.vendor1 !== commissionSettings.vendor2) {
+                        comisionesPayload.push({ usuarioId: commissionSettings.vendor2, montoComision: split, puntosVenta: 0 });
+                    }
+                } else {
+                    // 100% to vendor 1
+                    comisionesPayload.push({ usuarioId: commissionSettings.vendor1, montoComision: dAmount, puntosVenta: 0 });
+                }
+            }
 
             const payload = {
                 folioFisico: saleForm.folio_fisico,
@@ -89,7 +122,7 @@ const Step4_Sale = () => {
                 totalVenta: total,
                 saldoPendiente: saldo,
                 observacionesGenerales: saleForm.observaciones,
-                usuarioId: saleForm.usuarioId ? saleForm.usuarioId : null, // Send selected seller
+                usuarioId: null, // Vendedores puros opcionales vía comisión ahora
                 detalles: [
                     {
                         pacienteId: capturedData.patient.id,
@@ -98,17 +131,21 @@ const Step4_Sale = () => {
                         precioAplicado: total
                     }
                 ],
-                // Map the full list of payments
                 abonosIniciales: paymentList.map(p => ({
                     monto: p.monto,
                     fechaPago: p.fecha,
                     metodoPago: p.metodo,
-                    usuarioId: saleForm.usuarioId ? saleForm.usuarioId : null // Credit payment to same seller
-                }))
+                    usuarioId: null
+                })),
+                comisiones: comisionesPayload
             };
 
             if (!capturedData.consultation?.id || !capturedData.graduation?.id || !capturedData.patient?.id) {
                 throw new Error("Faltan datos requeridos (Consulta, Graduación o Paciente). Por favor verifique los pasos anteriores.");
+            }
+
+            if (dAmount > 0 && !commissionSettings.vendor1) {
+                throw new Error("Se especificó un fondo de comisión pero no se seleccionó al Vendedor Principal.");
             }
 
             // Optional Validation: Require Seller for High Value or Branded items?
@@ -144,7 +181,7 @@ const Step4_Sale = () => {
         <div className="step-sale fade-in">
             <div className="alert alert-info flex items-center gap-2">
                 <span className="text-xl">ℹ️</span>
-                <span>Capture el historial financiero. Seleccione el vendedor responsable.</span>
+                <span>Capture el historial financiero. La selección de vendedor es opcional (solo para comisiones).</span>
             </div>
 
             {/* SALES HEADER INFO */}
@@ -170,22 +207,80 @@ const Step4_Sale = () => {
                         onChange={handleSaleChange}
                     />
                 </div>
-                <div className="form-group">
-                    <label>Vendedor (Responsable)</label>
-                    <select
-                        name="usuarioId"
-                        className="form-select"
-                        value={saleForm.usuarioId}
-                        onChange={handleSaleChange}
-                        style={{ borderLeft: '4px solid var(--color-primario)' }}
-                    >
-                        <option value="">-- Seleccione Vendedor --</option>
-                        {sellers.map(s => (
-                            <option key={s.id} value={s.id}>{s.nombreCompleto}</option>
-                        ))}
-                    </select>
+                <div className="form-group flex-col">
+                    <label>Fondo de Comisión Extra ($)</label>
+                    <input
+                        type="number"
+                        name="amount"
+                        className="form-input"
+                        value={commissionSettings.amount}
+                        onChange={handleCommissionChange}
+                        placeholder="0.00"
+                        style={{ borderLeft: '4px solid var(--color-secundario)' }}
+                    />
+                    <small className="text-muted mt-1 text-xs">Dejar en 0 si no aplica comisión a secretarias.</small>
                 </div>
             </div>
+
+            {/* CONDITIONAL VENDORS BLOCK */}
+            {parseFloat(commissionSettings.amount) > 0 && (
+                <div className="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg animate-fade-in" style={{ backgroundColor: '#fefce8', borderColor: '#fef08a' }}>
+                    <h5 className="font-semibold text-yellow-800 mb-3 block">⚖️ Distribución de Comisión</h5>
+                    <div className="grid-cols-2">
+                        <div className="form-group">
+                            <label className="text-yellow-900 font-medium">Vendedora Principal</label>
+                            <select
+                                name="vendor1"
+                                className="form-select bg-white"
+                                value={commissionSettings.vendor1}
+                                onChange={handleCommissionChange}
+                            >
+                                <option value="">-- Seleccione vendedora --</option>
+                                {sellers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.nombreCompleto}</option>
+                                ))}
+                            </select>
+                            {!commissionSettings.showShared && commissionSettings.vendor1 && (
+                                <p className="text-xs text-yellow-700 font-medium mt-1">Recibirá el 100% (${(parseFloat(commissionSettings.amount) || 0).toFixed(2)})</p>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <label className="text-yellow-900 font-medium inline-flex items-center gap-2 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    name="showShared" 
+                                    checked={commissionSettings.showShared}
+                                    onChange={handleCommissionChange} 
+                                    className="rounded border-gray-300"
+                                />
+                                Añadir vendedora compartida (Dividir 50/50)
+                            </label>
+                            
+                            {commissionSettings.showShared && (
+                                <div className="mt-2 animate-fade-in">
+                                    <select
+                                        name="vendor2"
+                                        className="form-select bg-white"
+                                        value={commissionSettings.vendor2}
+                                        onChange={handleCommissionChange}
+                                    >
+                                        <option value="">-- Seleccione secundaria --</option>
+                                        {sellers.map(s => (
+                                            <option key={s.id} value={s.id}>{s.nombreCompleto}</option>
+                                        ))}
+                                    </select>
+                                    {commissionSettings.vendor1 && commissionSettings.vendor2 && (
+                                        <p className="text-xs text-yellow-700 font-medium mt-1">
+                                            Ambas recibirán el 50% (${((parseFloat(commissionSettings.amount) || 0) / 2).toFixed(2)})
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* PRODUCT DESCRIPTION + KEYWORDS */}
             <div className="mb-4">

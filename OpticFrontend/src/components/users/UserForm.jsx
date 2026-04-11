@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { authService } from '../../services/authService';
 import './UserForm.css';
 
 const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
@@ -39,7 +40,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
         setError(null);
 
         try {
-            const token = sessionStorage.getItem('token');
+            const token = authService.getToken();
             const method = user ? 'PUT' : 'POST';
             const url = user ? `/api/users/${user.id}` : '/api/users';
 
@@ -124,7 +125,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
 
                         <div className="form-row">
                             {/* Check if editing self */}
-                            {user && user.email === sessionStorage.getItem('userEmail') ? (
+                            {user && user.email === authService.getUserEmail() ? (
                                 /* Hidden field for self-edit to prevent role change */
                                 <div className="form-group col" style={{ display: 'none' }}>
                                     <input type="hidden" name="rol" value={formData.rol} />
