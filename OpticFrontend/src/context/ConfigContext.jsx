@@ -12,6 +12,13 @@ const defaultConfig = {
 export const ConfigProvider = ({ children }) => {
     const [config, setConfig] = useState(defaultConfig);
 
+    const applyConfig = (data) => {
+        setConfig(data);
+        const root = document.documentElement;
+        root.style.setProperty('--color-primario', data.colorPrimario);
+        root.style.setProperty('--color-secundario', data.colorSecundario);
+    };
+
     const fetchConfig = () => {
         console.log('🔄 [ConfigContext] Iniciando carga de configuración...');
 
@@ -20,6 +27,7 @@ export const ConfigProvider = ({ children }) => {
 
         if (!token) {
             console.warn('⚠️ [ConfigContext] No hay token, usando configuración por defecto');
+            applyConfig(defaultConfig);
             return;
         }
 
@@ -39,22 +47,15 @@ export const ConfigProvider = ({ children }) => {
             .then(data => {
                 if (data) {
                     console.log('✅ [ConfigContext] Configuración recibida:', data);
-                    setConfig(data);
-
-                    const root = document.documentElement;
-                    root.style.setProperty('--color-primario', data.colorPrimario);
-                    root.style.setProperty('--color-secundario', data.colorSecundario);
-
-                    console.log('🎨 [ConfigContext] Variables CSS aplicadas:');
-                    console.log('  --color-primario:', data.colorPrimario);
-                    console.log('  --color-secundario:', data.colorSecundario);
-                    console.log('  Valor actual en DOM:', getComputedStyle(root).getPropertyValue('--color-primario'));
+                    applyConfig(data);
                 } else {
-                    console.log('⚠️ [ConfigContext] No se recibieron datos');
+                    console.log('⚠️ [ConfigContext] No se recibieron datos, reseteando.');
+                    applyConfig(defaultConfig);
                 }
             })
             .catch(err => {
                 console.error('❌ [ConfigContext] Error al cargar configuración:', err);
+                applyConfig(defaultConfig);
             });
     };
 

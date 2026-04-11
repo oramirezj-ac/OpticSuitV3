@@ -159,6 +159,25 @@ using (var scope = app.Services.CreateScope())
     {
         await userManager.AddToRoleAsync(testUser, "Admin");
     }
+
+    // 4. Test users dynamically added for Galileo and San Gabriel
+    var testUserConfigs = new[] {
+        new { Email = "admin@sangabriel.com", Nombre = "Admin San Gabriel", Esquema = "sangabriel", Rol = "Admin" },
+        new { Email = "vendedor@sangabriel.com", Nombre = "Vendedor San Gabriel", Esquema = "sangabriel", Rol = "Vendedor" },
+        new { Email = "admin@galileo.com", Nombre = "Admin Galileo", Esquema = "galileo", Rol = "Admin" },
+        new { Email = "vendedor@galileo.com", Nombre = "Vendedor Galileo", Esquema = "galileo", Rol = "Vendedor" }
+    };
+
+    foreach (var uc in testUserConfigs)
+    {
+        var u = await userManager.FindByEmailAsync(uc.Email);
+        if (u == null)
+        {
+            u = new ApplicationUser { UserName = uc.Email, Email = uc.Email, NombreCompleto = uc.Nombre, NombreEsquema = uc.Esquema, EmailConfirmed = true, EstaActivo = true };
+            await userManager.CreateAsync(u, "Password123!");
+        }
+        if (!await userManager.IsInRoleAsync(u, uc.Rol)) await userManager.AddToRoleAsync(u, uc.Rol);
+    }
 }
 
 // --- 3. MIDDLEWARES (EL ORDEN ES LEY) ---
