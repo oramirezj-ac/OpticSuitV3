@@ -1,51 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { ConsultationsProvider, useConsultations } from '../../context/consultations/ConsultationsContext';
+import React, { useState } from 'react';
 import RecentConsultations from './tabs/RecentConsultations';
-import CaptureWizardModal from './wizard/CaptureWizardModal';
 import './ConsultationsIndex.css';
 
-const ConsultationsContent = ({ onNavigate }) => {
-    const { openWizard, isWizardOpen } = useConsultations();
-    const [activeTab, setActiveTab] = useState('recent');
+const ConsultationsIndex = ({ onNavigate }) => {
+    const [activeTab, setActiveTab] = useState('lentes'); // 'lentes' or 'medicas'
 
     return (
-        <div className="consultations-container">
+        <div className="consultations-container animate-fade-in">
             <div className="consultations-header">
-                <h2><span className="icon">🩺</span> Consultas</h2>
+                <h2><span className="icon">🩺</span> Gestión de Consultas</h2>
                 <div className="header-actions">
-                    <button className="btn-secondary" onClick={() => openWizard('medical')}>+ Nueva Consulta Médica</button>
-                    <button className="btn-primary" onClick={() => openWizard('glasses')}>+ Nueva Consulta (Lentes)</button>
+                    <button 
+                        className="btn-secondary" 
+                        onClick={() => onNavigate('consultation-create', { type: 'consulta_medica' })}
+                    >
+                        + Nueva Consulta Médica
+                    </button>
+                    <button 
+                        className="btn-primary" 
+                        onClick={() => onNavigate('consultation-create', { type: 'consulta_lentes' })}
+                    >
+                        + Nueva Consulta (Lentes)
+                    </button>
                 </div>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="tabs-nav" style={{ marginBottom: '20px', display: 'flex', gap: '10px', borderBottom: '1px solid #e2e8f0' }}>
+            {/* Premium Tabs Navigation */}
+            <div className="custom-tabs-container">
                 <button
-                    className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('recent')}
-                    style={{ padding: '10px 15px', border: 'none', background: 'none', borderBottom: activeTab === 'recent' ? '2px solid #3b82f6' : 'none', cursor: 'pointer', fontWeight: activeTab === 'recent' ? 'bold' : 'normal' }}
+                    className={`custom-tab ${activeTab === 'lentes' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('lentes')}
                 >
-                    Recientes
+                    🔍 Consultas por Lentes
                 </button>
-                {/* Future expansions: Search/All Consultations Tab */}
+                <button
+                    className={`custom-tab ${activeTab === 'medicas' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('medicas')}
+                >
+                    🏥 Consultas Médicas
+                </button>
             </div>
 
             {/* Tab Content */}
-            <div className="consultations-content">
-                {activeTab === 'recent' && <RecentConsultations onNavigate={onNavigate} />}
+            <div className="consultations-content-wrapper card">
+                {activeTab === 'lentes' && (
+                    <RecentConsultations 
+                        onNavigate={onNavigate} 
+                        tipoConsulta="consulta_lentes" 
+                        title="Historial de Consultas Refractivas"
+                    />
+                )}
+                {activeTab === 'medicas' && (
+                    <RecentConsultations 
+                        onNavigate={onNavigate} 
+                        tipoConsulta="consulta_medica" 
+                        title="Historial de Consultas Médicas"
+                    />
+                )}
             </div>
-
-            {/* Global Wizard Modal for creating consultations */}
-            {isWizardOpen && <CaptureWizardModal onNavigate={onNavigate} />}
         </div>
-    );
-};
-
-const ConsultationsIndex = ({ onNavigate }) => {
-    return (
-        <ConsultationsProvider>
-            <ConsultationsContent onNavigate={onNavigate} />
-        </ConsultationsProvider>
     );
 };
 

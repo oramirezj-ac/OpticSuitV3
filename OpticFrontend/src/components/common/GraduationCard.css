@@ -1,0 +1,78 @@
+.graduation-card-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    width: fit-content;
+    min-width: 450px;
+}
+
+.graduation-card-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #1e293b;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+    background: #f8fafc;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.graduation-grid {
+    display: grid;
+    grid-template-columns: 50px repeat(4, 90px);
+    gap: 4px;
+    align-items: center;
+}
+
+.grid-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-align: center;
+    text-transform: uppercase;
+    padding-bottom: 4px;
+}
+
+.grid-label {
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.grid-label.od {
+    color: #2563eb; /* Blue */
+}
+
+.grid-label.oi {
+    color: #16a34a; /* Green */
+}
+
+.grid-value {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #334155;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.graduation-card-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.footer-item {
+    margin-right: 15px;
+}

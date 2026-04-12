@@ -7,9 +7,14 @@ import UserDelete from './components/users/UserDelete';
 import PatientsIndex from './components/patients/PatientsIndex';
 import PatientDelete from './components/patients/PatientDelete';
 import PatientDetails from './components/patients/PatientDetails';
-import HistoricalCapture from './components/historical/HistoricalCapture';
 import ConsultationsIndex from './components/consultations/ConsultationsIndex';
 import ConsultationDelete from './components/consultations/ConsultationDelete';
+import ConsultationCreate from './components/consultations/ConsultationCreate';
+import ConsultationEdit from './components/consultations/ConsultationEdit';
+import GraduationCreate from './components/graduations/GraduationCreate';
+import SalesIndex from './components/sales/SalesIndex';
+import SaleCreate from './components/sales/SaleCreate';
+import PaymentManagement from './components/sales/PaymentManagement';
 import SaleDelete from './components/sales/SaleDelete';
 import PaymentDelete from './components/sales/PaymentDelete';
 import SystemCustomization from './components/admin/SystemCustomization';
@@ -89,10 +94,18 @@ function App() {
             onNavigate={handleNavigate}
           />
         );
-      case 'historical-capture':
-        return <HistoricalCapture onNavigate={handleNavigate} />;
+      case 'sales-create':
+        return <SaleCreate onNavigate={handleNavigate} params={navigationParams} />;
+      case 'sales-details':
+        return <PaymentManagement onNavigate={handleNavigate} params={navigationParams} />;
       case 'consultations':
-        return <ConsultationsIndex onNavigate={handleNavigate} />;
+        return <ConsultationsIndex onNavigate={handleNavigate} params={navigationParams} />;
+      case 'consultation-create':
+        return <ConsultationCreate onNavigate={handleNavigate} params={navigationParams} />;
+      case 'consultation-edit':
+        return <ConsultationEdit onNavigate={handleNavigate} params={navigationParams} />;
+      case 'graduations-create':
+        return <GraduationCreate onNavigate={handleNavigate} params={navigationParams} />;
       case 'consultation-delete':
         return (
           <ConsultationDelete

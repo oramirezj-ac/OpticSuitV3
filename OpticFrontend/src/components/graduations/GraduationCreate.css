@@ -1,0 +1,108 @@
+.graduation-create-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.graduation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.patient-context {
+    font-size: 1rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.formula-container {
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.formula-row {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Reduced from 16px */
+}
+
+.ojo-label {
+    min-width: 60px;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group-grad {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group-grad label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 2px;
+    font-weight: 700;
+}
+
+.input-compact {
+    width: 80px; /* Precise width for -22.00 formats */
+    padding: 8px 4px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.input-compact:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    background: white;
+}
+
+.diopter-wrapper {
+    gap: 1px !important;
+}
+
+.btn-step {
+    padding: 2px 6px !important;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.btn-step:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.simbolo {
+    margin-top: 15px; /* Alignment with inputs */
+    color: #cbd5e1;
+}
+
+.add-section {
+    margin-left: 20px !important;
+    padding-left: 20px !important;
+}
+
+.bottom-row {
+    background: #fdfdfd;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 1.5rem 0;
+}

@@ -18,16 +18,53 @@ namespace OpticBackend.Services
             _logger = logger;
         }
 
+        private async Task<string?> ResolveUniqueFolioAsync(string? baseFolio)
+        {
+            if (string.IsNullOrEmpty(baseFolio)) return null;
+
+            // Busca el folio base o cualquier versión con sufijo -D
+            var existingFolios = await _context.Ventas
+                .Where(v => v.FolioFisico == baseFolio || v.FolioFisico.StartsWith(baseFolio + "-D"))
+                .Select(v => v.FolioFisico)
+                .ToListAsync();
+
+            if (!existingFolios.Contains(baseFolio))
+            {
+                return baseFolio;
+            }
+
+            // Si ya existe el base, buscar el número más alto de sufijo -D
+            int maxSuffix = 0;
+            foreach (var f in existingFolios)
+            {
+                if (f.Contains("-D"))
+                {
+                    var parts = f.Split("-D");
+                    if (parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int currentSuffix))
+                    {
+                        if (currentSuffix > maxSuffix) maxSuffix = currentSuffix;
+                    }
+                }
+            }
+
+            return $"{baseFolio}-D{maxSuffix + 1}";
+        }
+
         public async Task<Sale> CreateSaleAsync(CreateSaleDto model)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Create Head Sale
+                // 1. Resolve Unique Folio (Internal suffixing for duplicates)
+                var uniqueFolio = await ResolveUniqueFolioAsync(model.FolioFisico);
+
+                // 2. Create Head Sale
                 var sale = new Sale
                 {
-                    FolioFisico = model.FolioFisico,
-                    Fecha = model.Fecha ?? DateTime.Now,
+                    FolioFisico = uniqueFolio,
+                    Fecha = model.Fecha.HasValue 
+                        ? (model.Fecha.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(model.Fecha.Value, DateTimeKind.Utc) : model.Fecha.Value.ToUniversalTime())
+                        : DateTime.UtcNow,
                     ConsultaId = model.ConsultaId,
                     TotalVenta = model.TotalVenta,
                     SaldoPendiente = model.SaldoPendiente,
@@ -36,13 +73,10 @@ namespace OpticBackend.Services
                     Estado = SaleConstants.StatusActive
                 };
 
-                if (sale.Fecha.HasValue && sale.Fecha.Value.Kind == DateTimeKind.Unspecified)
-                    sale.Fecha = DateTime.SpecifyKind(sale.Fecha.Value, DateTimeKind.Utc);
-
                 _context.Ventas.Add(sale);
                 await _context.SaveChangesAsync();
 
-                // 2. Create Details
+                // 3. Create Details
                 if (model.Detalles != null)
                 {
                     foreach (var det in model.Detalles)
@@ -63,7 +97,7 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 3. Create Initial Payments (Abonos)
+                // 4. Create Initial Payments (Abonos)
                 if (model.AbonosIniciales != null)
                 {
                     foreach (var pay in model.AbonosIniciales)
@@ -73,20 +107,38 @@ namespace OpticBackend.Services
                             VentaId = sale.Id,
                             Monto = pay.Monto,
                             MetodoPago = pay.MetodoPago,
-                            FechaPago = pay.FechaPago ?? DateTime.Now,
+                            FechaPago = pay.FechaPago.HasValue 
+                                ? (pay.FechaPago.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(pay.FechaPago.Value, DateTimeKind.Utc) : pay.FechaPago.Value.ToUniversalTime())
+                                : DateTime.UtcNow,
                             UsuarioId = !string.IsNullOrEmpty(pay.UsuarioId) ? pay.UsuarioId : (!string.IsNullOrEmpty(model.UsuarioId) ? model.UsuarioId : null)
                         };
-
-                        if (payment.FechaPago.Value.Kind == DateTimeKind.Unspecified)
-                            payment.FechaPago = DateTime.SpecifyKind(payment.FechaPago.Value, DateTimeKind.Utc);
 
                         _context.Abonos.Add(payment);
                     }
                 }
 
-                // 3.5 Create Commissions (Comisiones)
-                if (model.Comisiones != null && model.Comisiones.Any())
+                // 5. Create Commissions with Split Logic
+                if (model.VendedoresIds != null && model.VendedoresIds.Any() && model.MontoComisionTotal > 0)
                 {
+                    int count = model.VendedoresIds.Count;
+                    decimal montoPorVendedor = model.MontoComisionTotal.Value / count;
+
+                    foreach (var vendedorId in model.VendedoresIds)
+                    {
+                        var commission = new SalesCommission
+                        {
+                            VentaId = sale.Id,
+                            UsuarioId = vendedorId,
+                            MontoComision = montoPorVendedor,
+                            PuntosVenta = 0, // Opcional según lógica futura
+                            FechaRegistro = DateTime.UtcNow
+                        };
+                        _context.ComisionesVentas.Add(commission);
+                    }
+                }
+                else if (model.Comisiones != null && model.Comisiones.Any())
+                {
+                    // Backward compatibility / Explicit commissions
                     foreach (var com in model.Comisiones)
                     {
                         var commission = new SalesCommission
@@ -101,7 +153,7 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 4. Update parent items modification dates so they appear in Recent views
+                // 6. Update parent items modification dates
                 if (sale.ConsultaId.HasValue)
                 {
                     var consultaRef = await _context.Consultas.FindAsync(sale.ConsultaId.Value);
@@ -177,6 +229,9 @@ namespace OpticBackend.Services
                 var details = await _context.DetalleVentas.Where(d => d.VentaId == id).ToListAsync();
                 _context.DetalleVentas.RemoveRange(details);
 
+                var commissions = await _context.ComisionesVentas.Where(c => c.VentaId == id).ToListAsync();
+                _context.ComisionesVentas.RemoveRange(commissions);
+
                 _context.Ventas.Remove(sale);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -189,6 +244,29 @@ namespace OpticBackend.Services
                 _logger.LogError(ex, "Error cascading delete for sale {Id}", id);
                 throw;
             }
+        }
+
+        public async Task<IEnumerable<Sale>> GetRecentSalesAsync(int count = 20)
+        {
+            return await _context.Ventas
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .OrderByDescending(v => v.Fecha)
+                .Take(count)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Sale>> SearchSalesByFolioAsync(string folio)
+        {
+            if (string.IsNullOrEmpty(folio)) return new List<Sale>();
+
+            // Regla: mostrar todas las notas que coincidan (duplicados incluidos)
+            return await _context.Ventas
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .Where(v => v.FolioFisico == folio || v.FolioFisico.StartsWith(folio + "-D"))
+                .OrderByDescending(v => v.Fecha)
+                .ToListAsync();
         }
 
         // --- ABONOS / PAGOS ---
@@ -216,13 +294,12 @@ namespace OpticBackend.Services
             {
                 VentaId = saleId,
                 Monto = model.Monto,
-                FechaPago = model.FechaPago ?? DateTime.UtcNow,
+                FechaPago = model.FechaPago.HasValue 
+                    ? (model.FechaPago.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(model.FechaPago.Value, DateTimeKind.Utc) : model.FechaPago.Value.ToUniversalTime())
+                    : DateTime.UtcNow,
                 MetodoPago = model.MetodoPago,
                 UsuarioId = model.UsuarioId
             };
-
-            if (payment.FechaPago.Value.Kind == DateTimeKind.Unspecified)
-                payment.FechaPago = DateTime.SpecifyKind(payment.FechaPago.Value, DateTimeKind.Utc);
 
             _context.Abonos.Add(payment);
             await _context.SaveChangesAsync();

@@ -19,7 +19,7 @@ namespace OpticBackend.Models
         public virtual Patient? Paciente { get; set; }
 
         [Column("fecha")]
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         [Column("fecha_actualizacion")]
         public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;

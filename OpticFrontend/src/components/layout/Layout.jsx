@@ -41,19 +41,19 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                         <li>
                             <a
                                 href="#"
-                                className={activePage === 'historical-capture' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('historical-capture'); }}
+                                className={activePage === 'consultations' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('consultations'); }}
                             >
-                                <span className="icon">📜</span> Captura Histórica
+                                <span className="icon">🩺</span> Consultas
                             </a>
                         </li>
                         <li>
                             <a
                                 href="#"
-                                className={activePage === 'consultations' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('consultations'); }}
+                                className={activePage === 'sales' ? 'active' : ''}
+                                onClick={(e) => { e.preventDefault(); onNavigate('sales'); }}
                             >
-                                <span className="icon">🩺</span> Consultas
+                                <span className="icon">💰</span> Ventas
                             </a>
                         </li>
 

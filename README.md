@@ -1,47 +1,34 @@
 # OpticSuitV3
 
-OpticSuitV3 is a comprehensive, multi-tenant solution for managing optical businesses. Built with a modern technology stack, it ensures scalability, performance, and a premium user experience. This version introduces a robust architecture designed to support multiple branches or independent optics through schema-based multi-tenancy.
+OpticSuitV3 is a comprehensive, multi-tenant solution for managing optical businesses. Designed as a **High-Efficiency Clinical Ledger**, it focuses on precise data registration and management after patient consultations.
+
+The application is structured around a **Modular CRUD Architecture**, allowing total control over each stage of the patient journey—from clinical records to financial tracking—ensuring that physical notes are digitized without errors and with full auditability.
 
 ## 🚀 Technologies Used
 
 ### Backend
-*   **.NET 9 (Web API):** High-performance, cross-platform server-side logic.
-*   **Entity Framework Core:** ORM for database interactions.
-*   **PostgreSQL 15:** Reliable, open-source relational database.
-*   **ASP.NET Core Identity & JWT:** Secure authentication and role-based authorization.
-*   **Multi-tenancy:** Schema-per-tenant architecture implemented via custom Middleware and Interceptors.
+*   **.NET 9 (Web API):** High-performance server-side logic.
+*   **PostgreSQL 15:** Reliable relational database with schema-based multi-tenancy.
+*   **Entity Framework Core:** ORM for robust data transactions.
 
 ### Frontend
-*   **React 18 (Vite):** Fast, component-based UI development.
-*   **CSS Modules & Custom Design System:** Standardized styling without external framework dependencies (Vanilla CSS approach) for maximum flexibility and performance.
-*   **Modern UI/UX:** Responsive layouts, glassmorphism effects, and dynamic interactions.
+*   **React 18 (Vite):** Fast, component-based UI.
+*   **Vanilla CSS:** Custom design system optimized for clarity and reduced distraction.
 
-### Infrastructure
-*   **Docker & Docker Compose:** Containerization for consistent development and deployment environments.
+## 📦 Key Pillars (Modular Design)
 
-## 📦 Key Features (Current Status)
+### 1. **Patient Management (CRUD)**
+*   Full control over patient records.
+*   Advanced search and deduplication to ensure data integrity when capturing from physical notes.
 
-The project is currently in active development, with the following modules and features implemented:
+### 2. **Clinical Consultations**
+*   Independent management of medical and refraction exams.
+*   Flexible workflows that support both quick medical fees and detailed lens prescriptions.
 
-### 1. **Authentication & Security**
-*   **JWT Authentication:** Secure API access tokens.
-*   **Role-Based Access Control (RBAC):** Distinct roles for `Root`, `Admin`, and `Vendedor`.
-*   **Multi-tenancy:** Automatic schema switching based on the authenticated user.
-
-### 2. **Patient Management**
-*   **CRUD Operations:** Full management of patient records.
-*   **Historical Data Capture:** A specialized wizard flow (`Step1` to `Step3`) for importing or capturing legacy patient data, consultations, and graduations efficiently.
-
-### 3. **Medical Consultations**
-*   Management of optometric exams and consultation details.
-*   Integration with patient records.
-
-### 4. **Sales (POS)**
-*   Basic structure for managing sales (`SalesController`, `SalesService`).
-*   Integration with inventory and medical consultations (in progress).
-
-### 5. **System Configuration**
-*   Tenant-specific settings and user management.
+### 3. **Financial Control (Sales & Payments)**
+*   **Sales Module:** Registration of sales notes with manual folio support and automatic duplicate handling (Suffix logic).
+*   **Commission Tracking:** Automatic 50/50 split for multi-vendor sales, incentivizing branded frames.
+*   **Payment CRUD:** Independent management of income (Abonos), which serves as the primary source for financial reporting.
 
 ## 📂 Project Structure
 

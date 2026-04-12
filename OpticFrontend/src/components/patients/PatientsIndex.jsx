@@ -254,8 +254,19 @@ const PatientsIndex = ({ onNavigate }) => {
                                                 >
                                                     📂
                                                 </button>
-                                                <button className="btn-icon" style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => handleEdit(patient)}>✏️</button>
-                                                <button className="btn-icon" style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => requestDelete(patient)}>🗑️</button>
+                                                <button
+                                                    className="btn-icon"
+                                                    style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}
+                                                    title="Nueva Consulta"
+                                                    onClick={() => onNavigate('consultation-create', { 
+                                                        patientId: patient.id, 
+                                                        patientName: `${patient.nombre} ${patient.apellidoPaterno || ''}` 
+                                                    })}
+                                                >
+                                                    ➕
+                                                </button>
+                                                <button className="btn-icon" style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => handleEdit(patient)} title="Editar Paciente">✏️</button>
+                                                <button className="btn-icon" style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => requestDelete(patient)} title="Eliminar Paciente">🗑️</button>
                                             </td>
                                         </tr>
                                     ))

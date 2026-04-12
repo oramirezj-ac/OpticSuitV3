@@ -3,7 +3,7 @@ import { formatDateLong } from '../../../utils/dateUtils';
 import { formatCurrency } from '../../../utils/formatUtils';
 import { apiClient } from '../../../services/apiClient';
 
-const RecentConsultations = ({ onNavigate }) => {
+const RecentConsultations = ({ onNavigate, tipoConsulta, title }) => {
     const [consultations, setConsultations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,11 +12,14 @@ const RecentConsultations = ({ onNavigate }) => {
         const fetchRecent = async () => {
             setLoading(true);
             try {
-                // Fetch the new endpoint we created in the backend
-                const data = await apiClient.get('/api/consultations/recent?count=15');
+                // Fetch using the type filter if provided
+                const url = tipoConsulta 
+                    ? `/api/consultations/recent?count=15&tipo=${tipoConsulta}`
+                    : '/api/consultations/recent?count=15';
+                const data = await apiClient.get(url);
                 setConsultations(data || []);
             } catch (err) {
-                console.error("Failed to load recent consultations:", err);
+                console.error("Failed to load consultations:", err);
                 setError(err.message);
             } finally {
                 setLoading(false);
@@ -24,14 +27,14 @@ const RecentConsultations = ({ onNavigate }) => {
         };
 
         fetchRecent();
-    }, []);
+    }, [tipoConsulta]);
 
     if (loading) return <div className="loading-container"><div className="loader"></div></div>;
     if (error) return <div className="alert alert-danger">Error: {error}</div>;
 
     return (
         <div className="animate-fade-in">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">Últimas 15 Consultas Registradas</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-4">{title || 'Últimas 15 Consultas'}</h3>
 
             {consultations.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 border-dashed">
@@ -67,12 +70,60 @@ const RecentConsultations = ({ onNavigate }) => {
                                             </span>
                                         </td>
                                         <td>
-                                            <button
-                                                className="btn-secondary text-xs"
-                                                onClick={() => onNavigate('patient-details', { patientId: c.pacienteId })}
-                                            >
-                                                Ver Expediente 📂
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                <button
+                                                    className="btn-secondary text-xs"
+                                                    title="Ver Expediente"
+                                                    onClick={() => onNavigate('patient-details', { patientId: c.pacienteId })}
+                                                >
+                                                    📂
+                                                </button>
+                                                {!isPagado && (
+                                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                                        {c.tipoConsulta === 'consulta_lentes' && (
+                                                            <button
+                                                                className="btn-icon text-xs"
+                                                                title="Capturar Graduación"
+                                                                style={{ backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}
+                                                                onClick={() => onNavigate('graduations-create', { 
+                                                                    patientId: c.pacienteId, 
+                                                                    patientName: c.paciente ? `${c.paciente.nombre} ${c.paciente.apellidoPaterno || ''}` : 'Paciente',
+                                                                    consultationId: c.id 
+                                                                })}
+                                                            >
+                                                                👓
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            className="btn-primary text-xs"
+                                                            title="Cobrar Consulta / Generar Venta"
+                                                            onClick={() => onNavigate('sales-create', { 
+                                                                patientId: c.pacienteId, 
+                                                                consultationId: c.id,
+                                                                totalAmount: c.costoServicio,
+                                                                type: c.tipoConsulta
+                                                            })}
+                                                        >
+                                                            💰
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    className="btn-icon"
+                                                    title="Editar Consulta"
+                                                    onClick={() => onNavigate('consultation-edit', { id: c.id })}
+                                                >
+                                                    ✏️
+                                                </button>
+                                                <button
+                                                    className="btn-icon"
+                                                    style={{ color: '#ef4444' }}
+                                                    title="Eliminar Consulta"
+                                                    onClick={() => onNavigate('consultation-delete', { consultationId: c.id })}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

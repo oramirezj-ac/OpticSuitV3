@@ -17,7 +17,7 @@ namespace OpticBackend.Models
         public string? FolioFisico { get; set; }
 
         [Column("fecha")]
-        public DateTime? Fecha { get; set; } = DateTime.Now;
+        public DateTime? Fecha { get; set; } = DateTime.UtcNow;
 
         [Column("consulta_id")]
         public Guid? ConsultaId { get; set; }

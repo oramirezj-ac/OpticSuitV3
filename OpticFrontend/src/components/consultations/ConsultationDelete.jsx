@@ -8,8 +8,8 @@ const ConsultationDelete = ({ consultationId, onBack, onSuccess }) => {
             await apiClient.delete(`/api/consultations/${consultationId}`);
             onSuccess();
         } catch (err) {
-            // Usa el manejador de JS alert para errores graves de servidor por ahora, al menos no es el confirm
-            alert(err.message || "Fallo al eliminar consulta. Revise si tiene ventas atadas.");
+            // Error handling handled by the caller or a future toast system
+            console.error(err);
         }
     };
 

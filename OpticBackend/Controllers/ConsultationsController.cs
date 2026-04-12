@@ -197,6 +197,46 @@ namespace OpticBackend.Controllers
 
             return Ok(consultations);
         }
+        // PUT: api/consultations/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateConsultation(Guid id, UpdateConsultationDto model)
+        {
+            var consultation = await _context.Consultas.FindAsync(id);
+            if (consultation == null) return NotFound("Consulta no encontrada");
+
+            if (model.MotivoConsulta != null) consultation.MotivoConsulta = model.MotivoConsulta;
+            if (model.TipoConsulta != null) consultation.TipoConsulta = model.TipoConsulta;
+            if (model.Observaciones != null) consultation.Observaciones = model.Observaciones;
+            if (model.CostoServicio != null) consultation.CostoServicio = model.CostoServicio;
+            if (model.EstadoFinanciero != null) consultation.EstadoFinanciero = model.EstadoFinanciero;
+            
+            if (model.Fecha != null)
+            {
+                var newDate = model.Fecha.Value;
+                if (newDate.Kind == DateTimeKind.Unspecified)
+                    newDate = DateTime.SpecifyKind(newDate, DateTimeKind.Utc);
+                consultation.Fecha = newDate;
+            }
+
+            if (model.DetallesClinicos != null)
+            {
+                consultation.DetallesClinicos = JsonSerializer.Serialize(model.DetallesClinicos);
+            }
+
+            consultation.FechaActualizacion = DateTime.UtcNow;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Consulta actualizada correctamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating consultation {Id}", id);
+                return StatusCode(500, "Error al actualizar la consulta");
+            }
+        }
+
         // DELETE: api/consultations/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteConsultation(Guid id)

@@ -12,6 +12,10 @@ namespace OpticBackend.Dtos.Sales
         public decimal? SaldoPendiente { get; set; } // Puede calcularse, pero permitir captura manual histórica
         public string? ObservacionesGenerales { get; set; }
         public string? UsuarioId { get; set; }
+        
+        // Campos para el nuevo flujo de comisiones divididas
+        public decimal? MontoComisionTotal { get; set; } = 0;
+        public List<string>? VendedoresIds { get; set; } = new List<string>();
 
         public List<CreateSaleDetailDto> Detalles { get; set; } = new List<CreateSaleDetailDto>();
         public List<CreatePaymentDto> AbonosIniciales { get; set; } = new List<CreatePaymentDto>(); // Para registrar el pago/anticipo inicial

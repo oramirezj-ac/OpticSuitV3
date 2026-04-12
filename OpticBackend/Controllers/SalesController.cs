@@ -38,6 +38,22 @@ namespace OpticBackend.Controllers
             }
         }
 
+        // GET: api/sales/recent
+        [HttpGet("recent")]
+        public async Task<ActionResult<IEnumerable<Sale>>> GetRecentSales([FromQuery] int count = 20)
+        {
+            var sales = await _salesService.GetRecentSalesAsync(count);
+            return Ok(sales);
+        }
+
+        // GET: api/sales/search
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<Sale>>> SearchSales([FromQuery] string folio)
+        {
+            var sales = await _salesService.SearchSalesByFolioAsync(folio);
+            return Ok(sales);
+        }
+
         // GET: api/sales/patient/{patientId}
         [HttpGet("patient/{patientId}")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByPatient(Guid patientId)
