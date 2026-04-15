@@ -8,7 +8,7 @@ import SalesHistory from './details/SalesHistory';
 import MedicalCheckoutModal from './details/MedicalCheckoutModal';
 import './PatientDetails.css';
 
-const PatientDetails = ({ patientId, onBack, onNavigate }) => {
+const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
     // Custom Hook para datos y lógica de pestañas
     const {
         patient,
@@ -20,7 +20,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
         sales,
         loadingTab,
         refreshData
-    } = usePatientData(patientId);
+    } = usePatientData(patientId, initialTab || 'summary');
 
     // Estado local para UI (Modal)
     const [selectedSale, setSelectedSale] = useState(null);

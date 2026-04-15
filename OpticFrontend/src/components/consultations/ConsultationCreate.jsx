@@ -143,7 +143,14 @@ const ConsultationCreate = ({ onNavigate, params }) => {
 
             setShowSuccess(true);
             setTimeout(() => {
-                if (params?.patientId) {
+                if (tipoConsulta === 'consulta_lentes' && params?.patientId) {
+                    // Go directly to graduation CRUD for this consultation
+                    onNavigate('consultation-graduations', {
+                        consultationId: response.id,
+                        patientId: params.patientId
+                    });
+                } else if (params?.patientId) {
+                    // Medical: return to patient file
                     onNavigate('patient-details', { patientId: params.patientId });
                 } else {
                     onNavigate('consultations');

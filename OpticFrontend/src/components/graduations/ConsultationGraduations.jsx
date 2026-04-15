@@ -179,7 +179,7 @@ const ConsultationGraduations = ({ onNavigate, params }) => {
     // ── Navigation ─────────────────────────────────────────────────────────────
     const goBack = () => {
         if (patientId) {
-            onNavigate('patient-details', { patientId });
+            onNavigate('patient-details', { patientId, initialTab: 'consultations_lenses' });
         } else {
             onNavigate('consultations');
         }

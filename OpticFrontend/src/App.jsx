@@ -93,6 +93,7 @@ function App() {
         return (
           <PatientDetails
             patientId={navigationParams.patientId}
+            initialTab={navigationParams.initialTab}
             onBack={() => handleNavigate('patients')}
             onNavigate={handleNavigate}
           />

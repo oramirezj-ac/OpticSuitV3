@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../services/apiClient';
 
-export const usePatientData = (patientId) => {
+export const usePatientData = (patientId, initialTab = 'summary') => {
     const [patient, setPatient] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('summary'); // 'summary', 'consultations', 'sales'
+    const [activeTab, setActiveTab] = useState(initialTab); // 'summary', 'consultations_lenses', 'consultations_medical', 'sales'
 
     const [consultations, setConsultations] = useState([]);
     const [sales, setSales] = useState([]);
