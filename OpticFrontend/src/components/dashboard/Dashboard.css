@@ -1,0 +1,224 @@
+/* Dashboard Styles - Premium Aesthetic */
+
+:root {
+  --admin-accent: #6366f1; /* Indigo */
+  --medical-accent: #10b981; /* Emerald */
+  --dashboard-bg: #f8fafc;
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+.dashboard-wrapper {
+  padding: 1.5rem;
+  background-color: var(--dashboard-bg);
+  min-height: 100%;
+}
+
+/* Common Header */
+.dashboard-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-header h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+/* Tabs */
+.dashboard-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  background: white;
+  padding: 4px;
+  border-radius: 12px;
+  width: fit-content;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dashboard-tab {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  color: #64748b;
+}
+
+.dashboard-tab.active {
+  background: var(--admin-accent);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+}
+
+.dashboard-tab.active.medical {
+  background: var(--medical-accent);
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+}
+
+/* Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.year-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #f1f5f9;
+}
+
+.year-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow);
+}
+
+.year-card.active {
+  border: 2px solid var(--admin-accent);
+}
+
+.year-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.amount-label {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #1e293b;
+  letter-spacing: -1px;
+}
+
+.global-card {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  grid-column: 1 / -1;
+  border-radius: 24px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.global-card .amount-label {
+  color: #f1f5f9;
+  font-size: 3.5rem;
+}
+
+/* Charts */
+.chart-container {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+  border: 1px solid #f1f5f9;
+}
+
+.chart-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* Seller Dashboard */
+.seller-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.action-card {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 1px solid #f1f5f9;
+}
+
+.action-card:hover {
+  transform: scale(1.02);
+  border-color: var(--admin-accent);
+}
+
+.action-card .icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.action-card:hover .icon-wrapper {
+  background: var(--admin-accent);
+  color: white;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+}
+
+.brand-tracker {
+  margin-top: 1.5rem;
+}
+
+.progress-bar {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+  width: 0%;
+  transition: width 1s ease-out;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

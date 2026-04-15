@@ -23,6 +23,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ISalesService, SalesService>(); // Register SalesService
 builder.Services.AddScoped<IPatientDuplicationService, PatientDuplicationService>(); // Patient duplication service
 builder.Services.AddScoped<IUserAuthorizationService, UserAuthorizationService>(); // User authorization service
+builder.Services.AddScoped<IReportingService, ReportingService>(); // Reporting service
 builder.Services.AddHttpContextAccessor(); // ✅ Necesario para TenantInterceptor
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
