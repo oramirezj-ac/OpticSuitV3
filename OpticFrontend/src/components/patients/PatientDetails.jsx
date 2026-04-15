@@ -95,6 +95,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                 {activeTab === 'consultations_lenses' && (
                     <ConsultationHistory
                         type="lenses"
+                        patientId={patientId}
                         consultations={consultations}
                         loading={loadingTab}
                         onNavigate={onNavigate}
@@ -105,6 +106,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                 {activeTab === 'consultations_medical' && (
                     <ConsultationHistory
                         type="medical"
+                        patientId={patientId}
                         consultations={consultations}
                         loading={loadingTab}
                         onNavigate={onNavigate}
@@ -116,6 +118,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate }) => {
                 {activeTab === 'sales' && (
                     <SalesHistory
                         sales={sales}
+                        patientId={patientId}
                         loading={loadingTab}
                         onNavigate={onNavigate}
                         onSelectSale={setSelectedSale}

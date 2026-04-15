@@ -83,9 +83,9 @@ const RecentConsultations = ({ onNavigate, tipoConsulta, title }) => {
                                                         {c.tipoConsulta === 'consulta_lentes' && (
                                                             <button
                                                                 className="btn-icon text-xs"
-                                                                title="Capturar Graduación"
+                                                                title="Gestionar Graduaciones"
                                                                 style={{ backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}
-                                                                onClick={() => onNavigate('graduations-create', { 
+                                                                onClick={() => onNavigate('consultation-graduations', { 
                                                                     patientId: c.pacienteId, 
                                                                     patientName: c.paciente ? `${c.paciente.nombre} ${c.paciente.apellidoPaterno || ''}` : 'Paciente',
                                                                     consultationId: c.id 
@@ -119,7 +119,7 @@ const RecentConsultations = ({ onNavigate, tipoConsulta, title }) => {
                                                     className="btn-icon"
                                                     style={{ color: '#ef4444' }}
                                                     title="Eliminar Consulta"
-                                                    onClick={() => onNavigate('consultation-delete', { consultationId: c.id })}
+                                                    onClick={() => onNavigate('consultation-delete', { consultationId: c.id, patientId: c.pacienteId })}
                                                 >
                                                     🗑️
                                                 </button>

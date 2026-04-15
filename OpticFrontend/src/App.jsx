@@ -12,12 +12,15 @@ import ConsultationDelete from './components/consultations/ConsultationDelete';
 import ConsultationCreate from './components/consultations/ConsultationCreate';
 import ConsultationEdit from './components/consultations/ConsultationEdit';
 import GraduationCreate from './components/graduations/GraduationCreate';
+import ConsultationGraduations from './components/graduations/ConsultationGraduations';
 import SalesIndex from './components/sales/SalesIndex';
 import SaleCreate from './components/sales/SaleCreate';
 import PaymentManagement from './components/sales/PaymentManagement';
 import SaleDelete from './components/sales/SaleDelete';
 import PaymentDelete from './components/sales/PaymentDelete';
 import SystemCustomization from './components/admin/SystemCustomization';
+import AdminDashboard from './components/dashboard/AdminDashboard';
+import SellerDashboard from './components/dashboard/SellerDashboard';
 import useIdleTimeout from './hooks/useIdleTimeout';
 import { authService } from './services/authService';
 
@@ -98,6 +101,8 @@ function App() {
         return <SaleCreate onNavigate={handleNavigate} params={navigationParams} />;
       case 'sales-details':
         return <PaymentManagement onNavigate={handleNavigate} params={navigationParams} />;
+      case 'sales':
+        return <SalesIndex onNavigate={handleNavigate} params={navigationParams} />;
       case 'consultations':
         return <ConsultationsIndex onNavigate={handleNavigate} params={navigationParams} />;
       case 'consultation-create':
@@ -106,12 +111,22 @@ function App() {
         return <ConsultationEdit onNavigate={handleNavigate} params={navigationParams} />;
       case 'graduations-create':
         return <GraduationCreate onNavigate={handleNavigate} params={navigationParams} />;
+      case 'consultation-graduations':
+        return <ConsultationGraduations onNavigate={handleNavigate} params={navigationParams} />;
       case 'consultation-delete':
         return (
           <ConsultationDelete
             consultationId={navigationParams.consultationId}
-            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
-            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onBack={() =>
+              navigationParams.patientId
+                ? handleNavigate('patient-details', { patientId: navigationParams.patientId })
+                : handleNavigate('consultations')
+            }
+            onSuccess={() =>
+              navigationParams.patientId
+                ? handleNavigate('patient-details', { patientId: navigationParams.patientId })
+                : handleNavigate('consultations')
+            }
           />
         );
       case 'sale-delete':
@@ -135,12 +150,13 @@ function App() {
         return <SystemCustomization onNavigate={handleNavigate} />;
       case 'dashboard':
       default:
-        return (
-          <div>
-            <h1>Dashboard</h1>
-            <p>Bienvenido al sistema OpticSuit V3</p>
-          </div>
-        );
+        {
+          const roles = authService.getUserRoles();
+          if (roles.includes('Root') || roles.includes('Admin')) {
+            return <AdminDashboard onNavigate={handleNavigate} />;
+          }
+          return <SellerDashboard onNavigate={handleNavigate} />;
+        }
     }
   };
 

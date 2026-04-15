@@ -143,7 +143,11 @@ const ConsultationCreate = ({ onNavigate, params }) => {
 
             setShowSuccess(true);
             setTimeout(() => {
-                onNavigate('consultations');
+                if (params?.patientId) {
+                    onNavigate('patient-details', { patientId: params.patientId });
+                } else {
+                    onNavigate('consultations');
+                }
             }, 2000);
         } catch (err) {
             console.error("Error saving consultation:", err);
@@ -243,7 +247,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                         {error && <div className="alert alert-danger mt-4">{error}</div>}
 
                         <div className="form-actions mt-8 flex justify-end gap-4">
-                            <button type="button" className="btn-secondary" onClick={() => onNavigate('consultations')}>Cancelar</button>
+                            <button type="button" className="btn-secondary" onClick={() => params?.patientId ? onNavigate('patient-details', { patientId: params.patientId }) : onNavigate('consultations')}>Cancelar</button>
                             <button type="submit" className="btn-primary btn-xl" disabled={loading}>
                                 {loading ? 'Guardando...' : 'Finalizar y Generar Venta ➔'}
                             </button>

@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import GraduationCard from '../../common/GraduationCard';
 
-const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheckout, onDelete }) => {
+const ConsultationHistory = ({ type, patientId, consultations, loading, onNavigate, onCheckout, onDelete }) => {
     return (
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
@@ -11,7 +11,7 @@ const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheck
                 </h4>
                 <button
                     className="btn btn-primary text-sm"
-                    onClick={() => onNavigate && onNavigate('historical')}
+                    onClick={() => onNavigate && onNavigate('consultation-create', { patientId })}
                 >
                     + Nueva Consulta
                 </button>
@@ -21,7 +21,7 @@ const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheck
                 consultations.length === 0 ? (
                     <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 border-dashed">
                         <p className="text-muted mb-2">No hay consultas registradas para este paciente.</p>
-                        <button className="btn btn-ghost text-sm" onClick={() => onNavigate && onNavigate('historical')}>
+                        <button className="btn btn-ghost text-sm" onClick={() => onNavigate && onNavigate('consultation-create', { patientId })}>
                             Registrar la primera ahora
                         </button>
                     </div>
@@ -78,6 +78,18 @@ const ConsultationHistory = ({ type, consultations, loading, onNavigate, onCheck
                                                             onClick={() => onCheckout && onCheckout(c)}
                                                         >
                                                             Cobrar
+                                                        </button>
+                                                    )}
+                                                    {type === 'lenses' && (
+                                                        <button
+                                                            className="btn btn-primary text-xs py-1 px-3"
+                                                            style={{ background: '#0369a1', borderColor: '#0369a1' }}
+                                                            onClick={() => onNavigate && onNavigate('consultation-graduations', {
+                                                                consultationId: c.id,
+                                                                patientId: c.pacienteId
+                                                            })}
+                                                        >
+                                                            👓 Graduaciones
                                                         </button>
                                                     )}
                                                     <button 

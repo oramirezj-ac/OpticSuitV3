@@ -120,8 +120,10 @@ const ConsultationEdit = ({ onNavigate, params }) => {
             await apiClient.put(`/api/consultations/${consultationId}`, payload);
             
             setShowSuccess(true);
+            const backPage = params?.patientId ? 'patient-details' : 'consultations';
+            const backParams = params?.patientId ? { patientId: params.patientId } : {};
             setTimeout(() => {
-                onNavigate('consultations');
+                onNavigate(backPage, backParams);
             }, 2000);
         } catch (err) {
             setError(err.message || "Error al actualizar la consulta");
@@ -138,7 +140,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
             
             <div className="module-header">
                 <h2><span className="icon">✏️</span> Editar Consulta</h2>
-                <button className="btn-secondary" onClick={() => onNavigate('consultations')}>Cerrar e Ir al Listado</button>
+                <button className="btn-secondary" onClick={() => params?.patientId ? onNavigate('patient-details', { patientId: params.patientId }) : onNavigate('consultations')}>Cerrar e Ir al Listado</button>
             </div>
 
             <div className="card">
@@ -197,7 +199,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
                     {error && <div className="alert alert-danger mb-4">{error}</div>}
 
                     <div className="form-actions mt-8 flex justify-end gap-4">
-                        <button type="button" className="btn-secondary" onClick={() => onNavigate('consultations')}>Cancelar</button>
+                        <button type="button" className="btn-secondary" onClick={() => params?.patientId ? onNavigate('patient-details', { patientId: params.patientId }) : onNavigate('consultations')}>Cancelar</button>
                         <button type="submit" className="btn-primary" disabled={loading}>
                             {loading ? 'Guardando...' : 'Guardar Cambios ➔'}
                         </button>

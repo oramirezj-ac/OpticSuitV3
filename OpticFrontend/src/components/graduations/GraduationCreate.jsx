@@ -212,7 +212,7 @@ const GraduationCreate = ({ onNavigate, params }) => {
                     </div>
 
                     <div className="actions flex gap-4">
-                        <button type="button" className="btn-secondary" onClick={() => onNavigate('patient-details', { patientId })}>Cancelar</button>
+                        <button type="button" className="btn-secondary" onClick={() => patientId ? onNavigate('patient-details', { patientId }) : onNavigate('consultations')}>Cancelar</button>
                         <button 
                             type="button" 
                             className="bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-bold border border-slate-200 hover:bg-slate-200" 

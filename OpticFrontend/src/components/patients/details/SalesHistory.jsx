@@ -2,14 +2,14 @@ import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import { formatCurrency } from '../../../utils/formatUtils';
 
-const SalesHistory = ({ sales, loading, onNavigate, onSelectSale, onDeleteSale }) => {
+const SalesHistory = ({ sales, patientId, loading, onNavigate, onSelectSale, onDeleteSale }) => {
     return (
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
                 <h4 className="text-lg font-semibold text-slate-700">Historial de Ventas</h4>
                 <button
                     className="btn btn-primary text-sm"
-                    onClick={() => onNavigate && onNavigate('historical')}
+                    onClick={() => onNavigate && onNavigate('sales-create', { patientId })}
                 >
                     + Nueva Venta
                 </button>
@@ -19,7 +19,7 @@ const SalesHistory = ({ sales, loading, onNavigate, onSelectSale, onDeleteSale }
                 sales.length === 0 ? (
                     <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 border-dashed">
                         <p className="text-muted mb-2">No hay ventas registradas.</p>
-                        <button className="btn btn-ghost text-sm" onClick={() => onNavigate && onNavigate('historical')}>
+                        <button className="btn btn-ghost text-sm" onClick={() => onNavigate && onNavigate('sales-create', { patientId })}>
                             Realizar una venta
                         </button>
                     </div>

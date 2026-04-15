@@ -144,6 +144,57 @@ namespace OpticBackend.Controllers
             return Ok(graduation);
         }
 
+        // PUT: api/consultations/graduations/{id}
+        [HttpPut("graduations/{id}")]
+        public async Task<IActionResult> UpdateGraduation(Guid id, [FromBody] CreateGraduationDto model)
+        {
+            var graduation = await _context.Graduaciones.FindAsync(id);
+            if (graduation == null) return NotFound("Graduación no encontrada");
+
+            if (model.TipoGraduacion != null) graduation.TipoGraduacion = model.TipoGraduacion;
+            graduation.OdEsfera = model.OdEsfera;
+            graduation.OdCilindro = model.OdCilindro;
+            graduation.OdEje = model.OdEje;
+            graduation.OdAdicion = model.OdAdicion;
+            graduation.OiEsfera = model.OiEsfera;
+            graduation.OiCilindro = model.OiCilindro;
+            graduation.OiEje = model.OiEje;
+            graduation.OiAdicion = model.OiAdicion;
+            if (model.DetallesMontaje != null)
+                graduation.DetallesMontaje = JsonSerializer.Serialize(model.DetallesMontaje);
+
+            await _context.SaveChangesAsync();
+
+            var result = new
+            {
+                graduation.Id,
+                graduation.ConsultaId,
+                graduation.TipoGraduacion,
+                graduation.OdEsfera,
+                graduation.OdCilindro,
+                graduation.OdEje,
+                graduation.OdAdicion,
+                graduation.OiEsfera,
+                graduation.OiCilindro,
+                graduation.OiEje,
+                graduation.OiAdicion,
+                graduation.DetallesMontaje
+            };
+            return Ok(result);
+        }
+
+        // DELETE: api/consultations/graduations/{id}
+        [HttpDelete("graduations/{id}")]
+        public async Task<IActionResult> DeleteGraduation(Guid id)
+        {
+            var graduation = await _context.Graduaciones.FindAsync(id);
+            if (graduation == null) return NotFound("Graduación no encontrada");
+
+            _context.Graduaciones.Remove(graduation);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Graduación eliminada" });
+        }
+
 
         // GET: api/consultations/{id}
         [HttpGet("{id}")]

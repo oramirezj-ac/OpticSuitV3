@@ -54,14 +54,17 @@ const SaleCreate = ({ onNavigate, params }) => {
             if (vendedoresSeleccionados.length < 2) {
                 setVendedoresSeleccionados([...vendedoresSeleccionados, userId]);
             } else {
-                alert("Máximo 2 vendedores por división de comisión (50/50)");
+                setError('Máximo 2 vendedores por división de comisión (50/50)');
             }
         }
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!folioFisico) return alert("El folio físico es obligatorio");
+        if (!folioFisico) {
+            setError('El folio físico es obligatorio');
+            return;
+        }
         
         setLoading(true);
         setError(null);
@@ -90,7 +93,11 @@ const SaleCreate = ({ onNavigate, params }) => {
             
             setShowSuccess(true);
             setTimeout(() => {
-                onNavigate('sales', { saleId: result.id });
+                if (params?.patientId) {
+                    onNavigate('patient-details', { patientId: params.patientId });
+                } else {
+                    onNavigate('sales', { saleId: result.id });
+                }
             }, 2000);
         } catch (err) {
             console.error("Error saving sale:", err);
