@@ -81,11 +81,16 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                 }
             }
 
+            const finalPayload = { 
+                ...payload,
+                fechaRegistro: payload.fechaRegistro ? new Date(payload.fechaRegistro + 'T00:00:00Z').toISOString() : new Date().toISOString()
+            };
+
             // Create or update patient
             if (patient) {
-                await updatePatient(patient.id, payload);
+                await updatePatient(patient.id, finalPayload);
             } else {
-                await createPatient(payload);
+                await createPatient(finalPayload);
             }
 
             onSuccess();

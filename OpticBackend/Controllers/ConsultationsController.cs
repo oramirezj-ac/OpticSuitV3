@@ -199,8 +199,9 @@ namespace OpticBackend.Controllers
         }
         // PUT: api/consultations/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateConsultation(Guid id, UpdateConsultationDto model)
+        public async Task<IActionResult> UpdateConsultation(Guid id, [FromBody] UpdateConsultationDto model)
         {
+            _logger.LogInformation("📥 [API] Petición PUT recibida para consulta: {Id}", id);
             var consultation = await _context.Consultas.FindAsync(id);
             if (consultation == null) return NotFound("Consulta no encontrada");
 

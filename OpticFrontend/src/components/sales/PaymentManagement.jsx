@@ -32,7 +32,11 @@ const PaymentManagement = ({ onNavigate, params }) => {
     const handleAddPayment = async (e) => {
         e.preventDefault();
         try {
-            await apiClient.post(`/api/sales/${saleId}/payments`, newPayment);
+            const paymentPayload = {
+                ...newPayment,
+                fechaPago: newPayment.fechaPago ? new Date(newPayment.fechaPago + 'T00:00:00Z').toISOString() : new Date().toISOString()
+            };
+            await apiClient.post(`/api/sales/${saleId}/payments`, paymentPayload);
             setShowPayModal(false);
             setNewPayment({ monto: '', metodoPago: 'Efectivo', fechaPago: new Date().toISOString().split('T')[0] });
             fetchSaleDetails(); // Refresh to update balance and list

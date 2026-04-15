@@ -69,7 +69,7 @@ const SaleCreate = ({ onNavigate, params }) => {
         try {
             const payload = {
                 folioFisico,
-                fecha: new Date(saleDate).toISOString(),
+                fecha: saleDate ? new Date(saleDate + 'T00:00:00Z').toISOString() : new Date().toISOString(),
                 consultaId: params?.consultationId || null,
                 totalVenta: parseFloat(totalVenta),
                 saldoPendiente: parseFloat(totalVenta),

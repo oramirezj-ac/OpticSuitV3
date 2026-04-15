@@ -109,7 +109,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
 
             const payload = {
                 pacienteId: selectedPatient.id,
-                fecha: new Date(form.fecha).toISOString(),
+                fecha: form.fecha ? new Date(form.fecha + 'T00:00:00Z').toISOString() : new Date().toISOString(),
                 tipoConsulta,
                 motivoConsulta: form.motivoConsulta,
                 observaciones: form.observaciones,

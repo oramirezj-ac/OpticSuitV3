@@ -32,7 +32,7 @@ const PaymentModal = ({ sale, payment, onClose, onSuccess }) => {
         try {
             const payload = {
                 monto: monto,
-                fechaPago: form.fechaPago,
+                fechaPago: new Date(form.fechaPago + 'T00:00:00Z').toISOString(),
                 metodoPago: form.metodoPago
             };
 

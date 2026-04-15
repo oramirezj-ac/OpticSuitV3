@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
 import SuccessOverlay from '../common/SuccessOverlay';
+import { formatDateForInput } from '../../utils/dateUtils';
 import './ConsultationCreate.css';
 
 const ConsultationEdit = ({ onNavigate, params }) => {
-    const consultationId = params?.id;
+    // SOPORTE PARA AMBOS NOMBRES DE PARÁMETRO: 'id' (Consultas Recientes) y 'consultationId' (Historial del Paciente)
+    const consultationId = params?.id || params?.consultationId;
     const [loading, setLoading] = useState(true);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState(null);
@@ -22,38 +24,73 @@ const ConsultationEdit = ({ onNavigate, params }) => {
     });
 
     useEffect(() => {
+        let isMounted = true;
         const fetchDetails = async () => {
-            if (!consultationId) return;
+            if (!consultationId) {
+                console.warn("ConsultationEdit: No ID provided");
+                setLoading(false);
+                return;
+            }
+
+            // Timeout de seguridad de 10 segundos
+            const timer = setTimeout(() => {
+                if (isMounted && loading) {
+                    console.error("Timeout: La respuesta del servidor tardó demasiado");
+                    setError("El servidor no responde. Por favor, intenta de nuevo o reinicia el sistema.");
+                    setLoading(false);
+                }
+            }, 10000);
+
             try {
+                console.log("ConsultationEdit: Iniciando carga de ID", consultationId);
                 const data = await apiClient.get(`/api/consultations/${consultationId}`);
+                console.log("ConsultationEdit: Datos recibidos", data);
+                
+                if (!isMounted) return;
+                clearTimeout(timer);
+
+                if (!data) throw new Error("La consulta no existe o el servidor devolvió vacío.");
+
                 setSelectedPatient(data.paciente);
-                setTipoConsulta(data.tipoConsulta);
+                setTipoConsulta(data.tipoConsulta || 'consulta_lentes');
                 
                 let diag = '';
                 let treat = '';
                 if (data.detallesClinicos) {
                     try {
-                        const dc = JSON.parse(data.detallesClinicos);
+                        const dc = typeof data.detallesClinicos === 'string' 
+                            ? JSON.parse(data.detallesClinicos) 
+                            : data.detallesClinicos;
                         diag = dc.diagnostico || '';
                         treat = dc.tratamiento || '';
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error("ConsultationEdit: Error parseando detallesClinicos", e);
+                    }
                 }
 
+                // Usamos split directamente para máxima compatibilidad si formatDateForInput fallara
+                const fechaInput = data.fecha ? data.fecha.split('T')[0] : '';
+
                 setForm({
-                    fecha: data.fecha.split('T')[0],
-                    motivoConsulta: data.motivoConsulta,
-                    observaciones: data.observaciones,
+                    fecha: fechaInput,
+                    motivoConsulta: data.motivoConsulta || '',
+                    observaciones: data.observaciones || '',
                     diagnostico: diag,
                     tratamiento: treat,
-                    costoServicio: data.costoServicio
+                    costoServicio: data.costoServicio || 0
                 });
             } catch (err) {
-                setError("Error al cargar detalles de la consulta");
+                if (!isMounted) return;
+                clearTimeout(timer);
+                console.error("ConsultationEdit: Error en fetchDetails", err);
+                setError("No se pudo cargar la consulta: " + (err.message || "Error de conexión"));
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
+
         fetchDetails();
+        return () => { isMounted = false; };
     }, [consultationId]);
 
     const handleFormChange = (e) => {
@@ -72,7 +109,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
             } : {};
 
             const payload = {
-                fecha: new Date(form.fecha).toISOString(),
+                fecha: form.fecha ? new Date(form.fecha + 'T00:00:00Z').toISOString() : new Date().toISOString(),
                 tipoConsulta,
                 motivoConsulta: form.motivoConsulta,
                 observaciones: form.observaciones,

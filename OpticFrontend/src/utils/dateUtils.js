@@ -8,17 +8,23 @@
 export const formatDateLong = (dateInput) => {
     if (!dateInput) return '-';
 
-    const date = new Date(dateInput);
+    // Usamos 'UTC' para la visualización porque las fechas en la base de datos 
+    // se guardan como medianoche UTC (ej. 2026-04-01T00:00:00Z).
+    // Si usamos la zona horaria local, se restan horas y retrocede un día.
+    try {
+        const date = new Date(dateInput);
+        if (isNaN(date.getTime())) return '-';
 
-    // Validar si es una fecha válida
-    if (isNaN(date.getTime())) return '-';
-
-    return date.toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+        return date.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'UTC' // Fuerza a mostrar el día calendario original (UTC)
+        });
+    } catch (e) {
+        return '-';
+    }
 };
 
 /**
@@ -29,14 +35,16 @@ export const formatDateLong = (dateInput) => {
 export const calculateAgeFromDate = (dateString) => {
     if (!dateString) return null;
 
+    // Procesamos la fecha de nacimiento como UTC para evitar desfase de un día
     const birthDate = new Date(dateString);
     const today = new Date();
 
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+    // Usamos componentes UTC para el cálculo de edad
+    let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
+    const monthDiff = today.getUTCMonth() - birthDate.getUTCMonth();
 
-    // Ajustar si aún no ha cumplido años este año
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    // Ajustar si aún no ha cumplido años este año (comparando con UTC)
+    if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < birthDate.getUTCDate())) {
         age--;
     }
 
@@ -63,7 +71,13 @@ export const calculateDateFromAge = (age) => {
  * @param {string} dateString - Fecha en formato ISO
  * @returns {string} Fecha en formato YYYY-MM-DD
  */
-export const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    return dateString.split('T')[0];
+export const formatDateForInput = (dateInput) => {
+    if (!dateInput) return '';
+    
+    if (dateInput instanceof Date) {
+        return dateInput.toISOString().split('T')[0];
+    }
+    
+    // Si es un string ISO (ej. 2026-04-01T00:00:00Z)
+    return dateInput.toString().split('T')[0];
 };
