@@ -26,6 +26,23 @@ const SaleCreate = ({ onNavigate, params }) => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState(null);
 
+    const TAG_GROUPS = [
+        { label: 'Tipo', tags: ['Monofocal', 'Bifocal', 'Progresivo'] },
+        { label: 'Material', tags: ['CR-39', 'Hi-Index', 'Policarbonato', 'Trivex', 'Cristal'] },
+        { label: 'Tratamiento', tags: ['Antireflejante', 'Fotocromatico', 'Anti blue ray', 'Transition'] },
+        { label: 'Armazón', tags: ['Armazón', 'Propio', 'De marca'] },
+        { label: 'Contacto', tags: ['Lente de contacto'] }
+    ];
+
+    const addObservationTag = (tag) => {
+        setObservaciones(prev => {
+            if (!prev) return tag;
+            const trimmed = prev.trim();
+            if (trimmed.endsWith(',')) return `${trimmed} ${tag}`;
+            return `${trimmed}, ${tag}`;
+        });
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -83,7 +100,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                     {
                         pacienteId: params?.patientId,
                         graduacionId: selectedGraduationId || null,
-                        descripcionManual: "Venta de lentes/armazón"
+                        descripcionManual: observaciones || "Venta de lentes/armazón"
                         // Other fields can be expanded later
                     }
                 ]
@@ -93,11 +110,7 @@ const SaleCreate = ({ onNavigate, params }) => {
             
             setShowSuccess(true);
             setTimeout(() => {
-                if (params?.patientId) {
-                    onNavigate('patient-details', { patientId: params.patientId });
-                } else {
-                    onNavigate('sales', { saleId: result.id });
-                }
+                onNavigate('sales-details', { saleId: result.id, patientId: params?.patientId });
             }, 2000);
         } catch (err) {
             console.error("Error saving sale:", err);
@@ -126,62 +139,89 @@ const SaleCreate = ({ onNavigate, params }) => {
                 <button className="btn-secondary" onClick={() => onNavigate('sales')}>Volver al Listado</button>
             </div>
 
-            <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleSave} className="sales-form-grid">
                 {/* Left Column: Core Data */}
                 <div className="card">
                     <h3 className="text-lg font-bold mb-4 border-bottom pb-2">Información de la Nota</h3>
                     
-                    <div className="form-group">
-                        <label>Fecha de Venta *</label>
-                        <input 
-                            type="date" 
-                            className="form-input" 
-                            required
-                            value={saleDate}
-                            onChange={(e) => setSaleDate(e.target.value)}
-                        />
+                    <div className="form-row-3">
+                        <div className="form-group mb-0">
+                            <label>Fecha de Venta *</label>
+                            <input 
+                                type="date" 
+                                className="form-input" 
+                                required
+                                value={saleDate}
+                                onChange={(e) => setSaleDate(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group mb-0">
+                            <label>Folio Físico *</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Ej. 0001" 
+                                required
+                                value={folioFisico}
+                                onChange={(e) => setFolioFisico(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group mb-0">
+                            <label>Monto Total *</label>
+                            <input 
+                                type="number" 
+                                step="0.01"
+                                className="form-input" 
+                                placeholder="0.00" 
+                                required
+                                value={totalVenta}
+                                onChange={(e) => setTotalVenta(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                        <p className="text-xs text-slate-400">Si el folio ya existe, el sistema gestionará el duplicado automáticamente.</p>
                     </div>
 
                     <div className="form-group">
-                        <label>Folio Físico (Manual) *</label>
-                        <input 
-                            type="text" 
-                            className="form-input" 
-                            placeholder="Ej. 0001" 
-                            required
-                            value={folioFisico}
-                            onChange={(e) => setFolioFisico(e.target.value)}
-                        />
-                        <p className="text-xs text-slate-400 mt-1">Si el folio ya existe, el sistema gestionará el duplicado automáticamente.</p>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Monto Total de la Venta *</label>
-                        <input 
-                            type="number" 
-                            step="0.01"
-                            className="form-input" 
-                            placeholder="0.00" 
-                            required
-                            value={totalVenta}
-                            onChange={(e) => setTotalVenta(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Observaciones</label>
+                        <label>Observaciones de la Nota</label>
                         <textarea 
                             className="form-input" 
-                            rows="3"
+                            rows="4"
+                            placeholder="Describa los detalles de la venta o use las herramientas de abajo..."
                             value={observaciones}
                             onChange={(e) => setObservaciones(e.target.value)}
                         />
+                        
+                        <div className="observation-tools">
+                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>⚡ LLENADO RÁPIDO</span>
+                            </div>
+                            {TAG_GROUPS.map(group => (
+                                <div key={group.label} className="tag-group">
+                                    <span className="tag-label">{group.label}:</span>
+                                    {group.tags.map(tag => (
+                                        <button 
+                                            key={tag} 
+                                            type="button" 
+                                            className="tag-btn"
+                                            onClick={() => addObservationTag(tag)}
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Right Column: Commissions */}
                 <div className="card">
-                    <h3 className="text-lg font-bold mb-4 border-bottom pb-2">Incentivos y Comisiones</h3>
+                    <h3 className="text-lg font-bold mb-6 border-bottom pb-4 text-slate-700">Vinculación y Comisiones</h3>
                     
                     <div className="form-group">
                         <label>Vincular Graduación (Receta)</label>
