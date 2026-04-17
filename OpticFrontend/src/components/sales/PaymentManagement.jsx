@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { formatCurrency } from '../../utils/formatUtils';
 import { formatDateLong } from '../../utils/dateUtils';
+import EditSaleModal from '../patients/details/EditSaleModal';
+import PaymentModal from '../patients/details/PaymentModal';
 import './SalesIndex.css';
 
 const PaymentManagement = ({ onNavigate, params }) => {
@@ -9,8 +11,12 @@ const PaymentManagement = ({ onNavigate, params }) => {
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showPayModal, setShowPayModal] = useState(false);
-    const [newPayment, setNewPayment] = useState({ monto: '', metodoPago: 'Efectivo', fechaPago: new Date().toISOString().split('T')[0] });
+
+    // State for EditSaleModal
+    const [isEditing, setIsEditing] = useState(false);
+
+    // State for PaymentModal (null = closed, {} = adding new, {...} = editing existing)
+    const [selectedPayment, setSelectedPayment] = useState(null);
 
     useEffect(() => {
         if (saleId) fetchSaleDetails();
@@ -29,203 +35,166 @@ const PaymentManagement = ({ onNavigate, params }) => {
         }
     };
 
-    const handleAddPayment = async (e) => {
-        e.preventDefault();
-        try {
-            const paymentPayload = {
-                ...newPayment,
-                fechaPago: newPayment.fechaPago ? new Date(newPayment.fechaPago + 'T00:00:00Z').toISOString() : new Date().toISOString()
-            };
-            await apiClient.post(`/api/sales/${saleId}/payments`, paymentPayload);
-            setShowPayModal(false);
-            setNewPayment({ monto: '', metodoPago: 'Efectivo', fechaPago: new Date().toISOString().split('T')[0] });
-            fetchSaleDetails(); // Refresh to update balance and list
-        } catch (err) {
-            console.error("Error al agregar pago:", err);
-            setError("No se pudo registrar el pago. " + err.message);
-        }
-    };
-
     const handleDeletePayment = (paymentId) => {
-        // Redirect to a dedicated delete confirmation page instead of using window.confirm
-        onNavigate('payment-delete', { paymentId, saleId });
+        onNavigate('payment-delete', { paymentId, saleId, patientId: params?.patientId });
     };
 
-    const goBack = () => {
+    const handleClose = () => {
         if (params?.patientId) {
-            onNavigate('patient-details', { patientId: params.patientId });
+            onNavigate('patient-details', { patientId: params.patientId, initialTab: 'sales' });
         } else {
             onNavigate('sales');
         }
     };
 
+    const handleSaleUpdated = (updatedSale) => {
+        setSale(updatedSale);
+    };
+
+    const handlePaymentSuccess = (updatedSale) => {
+        setSelectedPayment(null);
+        // Refresh sale details to get updated balance and payment list
+        fetchSaleDetails();
+    };
+
     if (loading) return <div className="loading-container"><div className="loader"></div></div>;
-    if (error) return <div className="alert alert-danger">{error} <button onClick={() => onNavigate('sales')}>Volver</button></div>;
+    if (error) return <div className="alert alert-danger">{error} <button onClick={handleClose}>Volver</button></div>;
     if (!sale) return <div className="alert alert-warning">No se encontró la venta.</div>;
 
-    const isTotalPaid = sale.saldoPendiente <= 0;
+    // If EditSaleModal is active, render it (it has its own overlay at zIndex 1050)
+    if (isEditing) {
+        return (
+            <EditSaleModal
+                sale={sale}
+                onClose={() => setIsEditing(false)}
+                onSuccess={(updatedSale) => {
+                    setIsEditing(false);
+                    handleSaleUpdated(updatedSale);
+                }}
+            />
+        );
+    }
 
     return (
-        <div className="sales-container animate-fade-in">
-            <div className="sales-header">
-                <h2><span className="icon">💳</span> Gestión de Abonos</h2>
-                <button className="btn-secondary" onClick={goBack}>Regresar</button>
-            </div>
-
-            <div className="card card-shadow">
-                {/* Header Actions */}
-                <div className="flex-between mb-8 border-bottom pb-4">
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-800">Detalle de Nota de Venta</h3>
-                        {params?.patientId && (
-                            <button 
-                                className="text-blue-600 font-semibold text-sm hover:underline mt-4 block"
-                                onClick={goBack}
-                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                            >
-                                ← Volver al Expediente del Paciente
-                            </button>
-                        )}
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+            <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', maxWidth: '700px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }} className="animate-fade-in">
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <h3 style={{ margin: 0, color: '#1e293b' }}>Detalle de Venta</h3>
+                        <button
+                            className="btn btn-secondary text-xs py-1 px-3"
+                            onClick={() => setIsEditing(true)}
+                        >
+                            ✏️ Editar Nota
+                        </button>
                     </div>
+                    <button onClick={handleClose} style={{ background: 'none', border: 'none', fontSize: '1.5em', cursor: 'pointer' }}>&times;</button>
                 </div>
 
-                {/* Summary Grid (4 Columns) */}
-                <div className="form-row-4 mb-8 bg-slate-50 p-6 rounded-xl">
+                {/* Summary Grid 2x2 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div>
-                        <span className="tag-label block mb-1">Folio Físico</span>
-                        <div className="text-2xl font-black text-slate-800">{sale.folioFisico?.split('-D')[0]}</div>
+                        <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FOLIO:</strong>
+                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{sale.folioFisico?.split('-D')[0] || 'N/A'}</div>
                     </div>
                     <div>
-                        <span className="tag-label block mb-1">Fecha de Venta</span>
-                        <div className="text-lg font-semibold text-slate-700">{formatDateLong(sale.fecha)}</div>
+                        <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FECHA:</strong>
+                        <div>{formatDateLong(sale.fecha)}</div>
                     </div>
                     <div>
-                        <span className="tag-label block mb-1">Total de Nota</span>
-                        <div className="text-2xl font-mono font-bold text-slate-900">{formatCurrency(sale.totalVenta)}</div>
+                        <strong style={{ color: '#64748b', fontSize: '0.9em' }}>TOTAL:</strong>
+                        <div style={{ fontSize: '1.2em', color: '#0f172a' }}>{formatCurrency(sale.totalVenta)}</div>
                     </div>
                     <div>
-                        <span className="tag-label block mb-1">Saldo Pendiente</span>
-                        <div className={`text-2xl font-mono font-black ${isTotalPaid ? 'text-success' : 'text-danger'}`}>
+                        <strong style={{ color: '#64748b', fontSize: '0.9em' }}>SALDO PENDIENTE:</strong>
+                        <div style={{ fontSize: '1.2em', color: sale.saldoPendiente > 0.1 ? '#ef4444' : '#10b981' }}>
                             {formatCurrency(sale.saldoPendiente)}
                         </div>
                     </div>
                 </div>
 
-                {/* Observations */}
-                {sale.observacionesGenerales && (
-                    <div className="mb-8 p-5 bg-blue-50 border-blue-100 rounded-xl" style={{ borderLeft: '4px solid #3b82f6' }}>
-                        <label className="tag-label mb-2 block">Observaciones Generales</label>
-                        <div className="text-sm font-medium text-slate-700 leading-relaxed italic">
-                            "{sale.observacionesGenerales}"
-                        </div>
-                    </div>
-                )}
+                {/* Products / Services Table */}
+                <h4 style={{ fontSize: '1em', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px', marginTop: '20px' }}>Productos / Servicios</h4>
+                <table style={{ width: '100%', marginBottom: '20px', fontSize: '0.95em' }}>
+                    <thead style={{ background: '#f8fafc', color: '#475569' }}>
+                        <tr>
+                            <th style={{ padding: '8px' }}>Descripción</th>
+                            <th style={{ padding: '8px', textAlign: 'right' }}>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sale.detalles?.map((d, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '8px' }}>{d.descripcionManual || 'Producto sin descripción'}</td>
+                                <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(d.precioAplicado)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
 
-                {/* Products Table */}
-                <div className="mb-8">
-                    <h4 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-bottom">Productos / Servicios</h4>
-                    <table className="modern-table">
-                        <thead className="bg-slate-50">
+                {/* Payments History Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '30px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' }}>
+                    <h4 style={{ fontSize: '1em', margin: 0 }}>Historial de Abonos</h4>
+                    <button
+                        className="btn btn-primary text-xs py-1 px-3 bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-sm"
+                        onClick={() => setSelectedPayment({ monto: sale.saldoPendiente })}
+                    >
+                        + Agregar Abono
+                    </button>
+                </div>
+
+                {/* Payments Table */}
+                {(!sale.abonos || sale.abonos.length === 0) ? (
+                    <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>No hay abonos registrados.</p>
+                ) : (
+                    <table style={{ width: '100%', fontSize: '0.95em' }}>
+                        <thead style={{ background: '#f8fafc', color: '#475569' }}>
                             <tr>
-                                <th>Descripción del Item</th>
-                                <th style={{ textAlign: 'right' }}>Precio Aplicado</th>
+                                <th style={{ padding: '8px' }}>Fecha</th>
+                                <th style={{ padding: '8px' }}>Método</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Monto</th>
+                                <th style={{ padding: '8px', textAlign: 'center' }}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {sale.detalles?.map((d, i) => (
-                                <tr key={i}>
-                                    <td>{d.descripcionManual || 'Venta General'}</td>
-                                    <td style={{ textAlign: 'right' }} className="font-mono font-bold">{formatCurrency(d.precioAplicado)}</td>
+                            {sale.abonos.map((a, i) => (
+                                <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '8px' }}>{formatDateLong(a.fechaPago)}</td>
+                                    <td style={{ padding: '8px' }}>{a.metodoPago}</td>
+                                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(a.monto)}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                        <button
+                                            title="Editar"
+                                            className="btn btn-ghost text-xs p-1"
+                                            onClick={() => setSelectedPayment(a)}
+                                        >✏️</button>
+                                        <button
+                                            title="Eliminar"
+                                            className="btn btn-ghost text-xs p-1 ml-2"
+                                            onClick={() => handleDeletePayment(a.id)}
+                                        >🗑️</button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                </div>
+                )}
 
-                {/* Payments History */}
-                <div>
-                    <div className="flex-between mb-4 pb-2 border-bottom">
-                        <h4 className="text-lg font-bold text-slate-800">Historial de Abonos</h4>
-                        {!isTotalPaid && (
-                            <button className="btn-primary" onClick={() => setShowPayModal(true)}>
-                                + Registrar Nuevo Abono
-                            </button>
-                        )}
-                    </div>
-                    <table className="modern-table">
-                        <thead className="bg-slate-50">
-                            <tr>
-                                <th>Fecha de Pago</th>
-                                <th>Método</th>
-                                <th style={{ textAlign: 'right' }}>Monto</th>
-                                <th style={{ textAlign: 'center' }}>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sale.abonos && sale.abonos.length > 0 ? (
-                                sale.abonos.map(p => (
-                                    <tr key={p.id}>
-                                        <td>{formatDateLong(p.fechaPago)}</td>
-                                        <td>{p.metodoPago}</td>
-                                        <td style={{ textAlign: 'right' }} className="font-black text-success">{formatCurrency(p.monto)}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <button className="btn-icon" onClick={() => handleDeletePayment(p.id)}>🗑️</button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>No hay abonos registrados.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                {/* Footer */}
+                <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button className="btn-secondary" onClick={handleClose}>Cerrar Visor</button>
                 </div>
             </div>
 
-            {/* Modal */}
-            {showPayModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content animate-fade-in">
-                        <div className="modal-header-strip"></div>
-                        <h3 className="text-xl font-bold mb-6">Registrar Nuevo Abono</h3>
-                        <form onSubmit={handleAddPayment}>
-                            <div className="form-group">
-                                <label>Monto a Pagar *</label>
-                                <input 
-                                    type="number" 
-                                    required 
-                                    className="form-input text-2xl font-mono text-success"
-                                    autoFocus
-                                    value={newPayment.monto}
-                                    onChange={(e) => setNewPayment({...newPayment, monto: e.target.value})}
-                                />
-                                <div className="flex-between mt-4 text-xs font-bold text-slate-500">
-                                    <span>Saldo pendiente:</span>
-                                    <span>{formatCurrency(sale.saldoPendiente)}</span>
-                                </div>
-                            </div>
-                            <div className="form-row-3">
-                                <div className="form-group">
-                                    <label>Fecha</label>
-                                    <input type="date" className="form-input" value={newPayment.fechaPago} onChange={(e) => setNewPayment({...newPayment, fechaPago: e.target.value})} />
-                                </div>
-                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                    <label>Método</label>
-                                    <select className="form-input" value={newPayment.metodoPago} onChange={(e) => setNewPayment({...newPayment, metodoPago: e.target.value})}>
-                                        <option>Efectivo</option>
-                                        <option>Tarjeta</option>
-                                        <option>Transferencia</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex-between mt-8" style={{ gap: '12px' }}>
-                                <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowPayModal(false)}>Cancelar</button>
-                                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Guardar Pago</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+            {/* PAYMENT MODAL (Add / Edit) - Reusing PaymentModal from patient details */}
+            {selectedPayment !== null && (
+                <PaymentModal
+                    sale={sale}
+                    payment={selectedPayment}
+                    onClose={() => setSelectedPayment(null)}
+                    onSuccess={handlePaymentSuccess}
+                />
             )}
         </div>
     );
