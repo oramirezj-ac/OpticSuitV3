@@ -9,19 +9,40 @@ services:
       - ./data/db:/var/lib/postgresql/data # CAMBIO: Datos ahora viven dentro de la carpeta del proyecto
     ports:
       - "5432:5432"
+    # ✅ Healthcheck: Docker verificará que Postgres está listo antes de marcar el servicio como "healthy"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s      # Verificar cada 5 segundos
+      timeout: 5s       # Tiempo máximo de espera por verificación
+      retries: 10       # Reintentar hasta 10 veces (50 segundos máximo)
+      start_period: 10s # Darle 10 segundos de gracia al inicio
 
   backend:
     image: mcr.microsoft.com/dotnet/sdk:9.0
     container_name: api_optic
-    restart: always
+    restart: on-failure # Solo reiniciar si falla, no siempre
     volumes:
       - ./OpticBackend:/app
     working_dir: /app
     ports:
       - "127.0.0.2:80:8080"
-    command: /bin/bash -c "dotnet watch run --urls http://0.0.0.0:8080"
+    # ✅ El comando espera que la DB esté lista antes de arrancar el backend
+    # Se usa /dev/tcp ya que la imagen dotnet/sdk no tiene pg_isready ni netcat
+    command: >
+      /bin/bash -c "
+        echo '⏳ Esperando a que PostgreSQL esté listo en puerto 5432...' &&
+        until (echo > /dev/tcp/db/5432) 2>/dev/null; do
+          echo '   DB no disponible, reintentando en 2s...';
+          sleep 2;
+        done &&
+        echo '✅ Puerto 5432 disponible. Esperando 3s adicionales para que Postgres inicialice...' &&
+        sleep 3 &&
+        echo '🚀 Iniciando backend...' &&
+        dotnet watch run --urls http://0.0.0.0:8080
+      "
     depends_on:
-      - db
+      db:
+        condition: service_healthy # ✅ Esperar a que el healthcheck de la DB pase
 
   frontend:
     image: node:20-alpine

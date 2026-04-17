@@ -90,8 +90,36 @@ var app = builder.Build();
 // --- 2. SEEDING Y MIGRACIONES AUTOMÁTICAS ---
 using (var scope = app.Services.CreateScope())
 {
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var _context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    
+
+    // ✅ ESPERAR A QUE LA BASE DE DATOS ESTÉ LISTA (resiliencia ante arranques en Docker)
+    var maxRetries = 10;
+    var retryCount = 0;
+    var dbReady = false;
+    while (!dbReady && retryCount < maxRetries)
+    {
+        try
+        {
+            startupLogger.LogInformation("⏳ Verificando conexión a la base de datos (intento {Intento}/{Max})...", retryCount + 1, maxRetries);
+            await _context.Database.OpenConnectionAsync();
+            await _context.Database.CloseConnectionAsync();
+            dbReady = true;
+            startupLogger.LogInformation("✅ Conexión a la base de datos establecida.");
+        }
+        catch (Exception)
+        {
+            retryCount++;
+            if (retryCount >= maxRetries)
+            {
+                startupLogger.LogCritical("💥 No se pudo conectar a la base de datos tras {Max} intentos. El seeding no se ejecutará.", maxRetries);
+                throw;
+            }
+            startupLogger.LogWarning("⚠️  Base de datos no disponible. Reintentando en 3 segundos...");
+            await Task.Delay(3000);
+        }
+    }
+
     // Inyectar las columnas de actualización si no existen (PostgreSQL nativo)
     try
     {
@@ -104,8 +132,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Could not run automatic migrations for modification dates.");
+        startupLogger.LogWarning(ex, "Could not run automatic migrations for modification dates.");
     }
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
