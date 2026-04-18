@@ -47,9 +47,9 @@ const RecentConsultations = ({ onNavigate, tipoConsulta, title }) => {
                             <tr>
                                 <th>Fecha</th>
                                 <th>Paciente</th>
-                                <th>Motivo / Tipo</th>
-                                <th>Costo</th>
-                                <th>Estatus Fin.</th>
+                                {tipoConsulta !== 'consulta_lentes' && <th>Motivo / Tipo</th>}
+                                {tipoConsulta !== 'consulta_lentes' && <th>Costo</th>}
+                                {tipoConsulta !== 'consulta_lentes' && <th>Estatus Fin.</th>}
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -62,13 +62,19 @@ const RecentConsultations = ({ onNavigate, tipoConsulta, title }) => {
                                         <td className="font-bold text-slate-800">
                                             {c.paciente ? `${c.paciente.nombre} ${c.paciente.apellidoPaterno || ''}` : 'Desconocido'}
                                         </td>
-                                        <td className="text-slate-600">{c.motivoConsulta || 'Consulta General'}</td>
-                                        <td className="font-mono">{formatCurrency(c.costoServicio)}</td>
-                                        <td>
-                                            <span className={`badge ${isPagado ? 'badge-success' : 'badge-warning'}`}>
-                                                {c.estadoFinanciero?.toUpperCase() || 'PENDIENTE'}
-                                            </span>
-                                        </td>
+                                        {tipoConsulta !== 'consulta_lentes' && (
+                                            <td className="text-slate-600">{c.motivoConsulta || 'Consulta General'}</td>
+                                        )}
+                                        {tipoConsulta !== 'consulta_lentes' && (
+                                            <td className="font-mono">{formatCurrency(c.costoServicio)}</td>
+                                        )}
+                                        {tipoConsulta !== 'consulta_lentes' && (
+                                            <td>
+                                                <span className={`badge ${isPagado ? 'badge-success' : 'badge-warning'}`}>
+                                                    {c.estadoFinanciero?.toUpperCase() || 'PENDIENTE'}
+                                                </span>
+                                            </td>
+                                        )}
                                         <td>
                                             <div style={{ display: 'flex', gap: '5px' }}>
                                                 <button

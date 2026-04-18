@@ -91,6 +91,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                 folioFisico,
                 fecha: saleDate ? new Date(saleDate + 'T00:00:00Z').toISOString() : new Date().toISOString(),
                 consultaId: params?.consultationId || null,
+                pacienteId: params?.patientId || null,
                 totalVenta: parseFloat(totalVenta),
                 saldoPendiente: parseFloat(totalVenta),
                 observacionesGenerales: observaciones,
@@ -178,6 +179,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                                 required
                                 value={totalVenta}
                                 onChange={(e) => setTotalVenta(e.target.value)}
+                                onWheel={(e) => e.target.blur()} 
                             />
                         </div>
                     </div>
@@ -258,6 +260,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                             placeholder="Ej. 100.00"
                             value={montoComisionTotal}
                             onChange={(e) => setMontoComisionTotal(e.target.value)}
+                            onWheel={(e) => e.target.blur()}
                         />
                         <p className="text-xs text-slate-400 mt-1">Se repartirá equitativamente entre los vendedores seleccionados.</p>
                     </div>

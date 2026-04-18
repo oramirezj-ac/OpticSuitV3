@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { apiClient } from '../../../services/apiClient';
+import { formatDateForInput } from '../../../utils/dateUtils';
 
 const EditSaleModal = ({ sale, onClose, onSuccess }) => {
     // Local state initialized with current sale properties
     const [form, setForm] = useState({
         folioFisico: sale.folioFisico || '',
+        fecha: formatDateForInput(sale.fecha) || '',
         totalVenta: sale.totalVenta || 0,
         saldoPendiente: sale.saldoPendiente || 0,
         observacionesGenerales: sale.observacionesGenerales || ''
@@ -25,6 +27,7 @@ const EditSaleModal = ({ sale, onClose, onSuccess }) => {
             // Build the payload keeping specific numbers
             const payload = {
                 folioFisico: form.folioFisico,
+                fecha: form.fecha ? new Date(`${form.fecha}T00:00:00Z`).toISOString() : null,
                 totalVenta: parseFloat(form.totalVenta),
                 saldoPendiente: parseFloat(form.saldoPendiente),
                 observacionesGenerales: form.observacionesGenerales
@@ -70,6 +73,17 @@ const EditSaleModal = ({ sale, onClose, onSuccess }) => {
                             value={form.folioFisico}
                             onChange={handleChange}
                             placeholder="Ej. NV-001"
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="text-sm font-semibold text-slate-700 block mb-1">Fecha de Venta</label>
+                        <input
+                            type="date"
+                            name="fecha"
+                            className="form-input w-full"
+                            value={form.fecha}
+                            onChange={handleChange}
                         />
                     </div>
 

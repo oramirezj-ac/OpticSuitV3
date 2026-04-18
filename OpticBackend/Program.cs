@@ -120,14 +120,44 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // Inyectar las columnas de actualización si no existen (PostgreSQL nativo)
+    // Inyectar las columnas de actualización si no existen (PostgreSQL nativo en todos los esquemas)
     try
     {
             await _context.Database.ExecuteSqlRawAsync(@"
-                ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-                ALTER TABLE consultas ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-                ALTER TABLE consultas ADD COLUMN IF NOT EXISTS tipo_consulta VARCHAR(20) DEFAULT 'consulta_lentes';
-                UPDATE consultas SET tipo_consulta = 'consulta_lentes' WHERE tipo_consulta IS NULL;
+                DO $$
+                DECLARE
+                    schema_record RECORD;
+                    table_exists BOOLEAN;
+                BEGIN
+                    FOR schema_record IN 
+                        SELECT schema_name 
+                        FROM information_schema.schemata 
+                        WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast') 
+                          AND schema_name NOT LIKE 'pg_temp_%' 
+                          AND schema_name NOT LIKE 'pg_toast_temp_%'
+                    LOOP
+                        -- Agregamos paciente_id a ventas (si la tabla existe)
+                        SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = schema_record.schema_name AND table_name = 'ventas') INTO table_exists;
+                        IF table_exists THEN
+                            EXECUTE format('ALTER TABLE %I.ventas ADD COLUMN IF NOT EXISTS paciente_id UUID;', schema_record.schema_name);
+                        END IF;
+                        
+                        -- Agregamos paciente fecha_actualizacion
+                        SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = schema_record.schema_name AND table_name = 'pacientes') INTO table_exists;
+                        IF table_exists THEN
+                            EXECUTE format('ALTER TABLE %I.pacientes ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;', schema_record.schema_name);
+                        END IF;
+
+                        -- Agregamos consultas atributos
+                        SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = schema_record.schema_name AND table_name = 'consultas') INTO table_exists;
+                        IF table_exists THEN
+                            EXECUTE format('ALTER TABLE %I.consultas ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;', schema_record.schema_name);
+                            EXECUTE format('ALTER TABLE %I.consultas ADD COLUMN IF NOT EXISTS tipo_consulta VARCHAR(20) DEFAULT ''consulta_lentes'';', schema_record.schema_name);
+                            EXECUTE format('UPDATE %I.consultas SET tipo_consulta = ''consulta_lentes'' WHERE tipo_consulta IS NULL;', schema_record.schema_name);
+                        END IF;
+                    END LOOP;
+                END;
+                $$;
             ");
     }
     catch (Exception ex)

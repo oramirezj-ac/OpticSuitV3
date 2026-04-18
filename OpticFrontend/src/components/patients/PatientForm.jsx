@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import './../users/UserForm.css'; // Reutilizamos estilos del modal
+import SuccessOverlay from '../common/SuccessOverlay';
 import { calculateAgeFromDate, calculateDateFromAge, formatDateForInput } from '../../utils/dateUtils';
 import { checkDuplicates, createPatient, updatePatient } from '../../services/patientApi';
 
@@ -20,6 +21,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
         estaActivo: true
     });
     const [loading, setLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -93,8 +95,11 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                 await createPatient(finalPayload);
             }
 
-            onSuccess();
-            onClose();
+            setShowSuccess(true);
+            setTimeout(() => {
+                onSuccess();
+                onClose();
+            }, 1500);
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -217,6 +222,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    <SuccessOverlay show={showSuccess} message={patient ? "Paciente Actualizado" : "Paciente Registrado"} />
                     <div className="modal-body" style={{ overflowY: 'auto', padding: '20px' }}>
                         {error && <div className="alert alert-danger">{error}</div>}
 

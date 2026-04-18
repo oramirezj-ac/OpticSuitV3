@@ -206,7 +206,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                                 <>
                                     <div className="form-group mb-4">
                                         <label>Costo Consulta Base ($)</label>
-                                        <input type="number" name="costoServicio" className="form-input" value={form.costoServicio} onChange={handleFormChange} />
+                                        <input type="number" name="costoServicio" className="form-input" value={form.costoServicio} onChange={handleFormChange} onWheel={(e) => e.target.blur()} />
                                     </div>
 
                                     <div className="form-group md:col-span-2 mb-4">

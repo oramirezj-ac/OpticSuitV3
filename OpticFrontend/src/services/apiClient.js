@@ -17,11 +17,17 @@ const handleResponse = async (response) => {
         try {
             const rawText = await response.text();
             if (rawText) {
+                // Try parsing as JSON first
                 try {
                     const errorData = JSON.parse(rawText);
                     errorMessage = errorData.message || errorData.title || JSON.stringify(errorData);
                 } catch(e) {
-                    errorMessage = rawText;
+                    // Not JSON, use the text but clean it up if it's HTML (common in 500s)
+                    if (rawText.includes('<body') || rawText.includes('<html')) {
+                        errorMessage = `Error del servidor (${response.status}): Por favor verifique los registros del backend.`;
+                    } else {
+                        errorMessage = rawText;
+                    }
                 }
             } else {
                 errorMessage = `Error ${response.status}: ${response.statusText}`;

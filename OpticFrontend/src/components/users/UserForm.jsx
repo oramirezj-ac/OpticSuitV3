@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { authService } from '../../services/authService';
+import SuccessOverlay from '../common/SuccessOverlay';
 import './UserForm.css';
 
 const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
@@ -13,6 +14,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
         estaActivo: true
     });
     const [loading, setLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState(null);
 
     // Initial state setup for Edit Mode
@@ -62,8 +64,11 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
                 throw new Error(errData.message || (errData[0]?.description) || 'Error al guardar usuario');
             }
 
-            onSuccess();
-            onClose();
+            setShowSuccess(true);
+            setTimeout(() => {
+                onSuccess();
+                onClose();
+            }, 1500);
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -81,6 +86,7 @@ const UserForm = ({ user, onClose, onSuccess, isRoot }) => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
+                    <SuccessOverlay show={showSuccess} message={user ? "Usuario Actualizado" : "Usuario Registrado"} />
                     <div className="modal-body">
                         {error && <div className="alert alert-danger">{error}</div>}
 

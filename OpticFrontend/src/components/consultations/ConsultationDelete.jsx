@@ -1,12 +1,18 @@
 import React from 'react';
 import DeleteConfirmation from '../common/DeleteConfirmation';
 import { apiClient } from '../../services/apiClient';
+import SuccessOverlay from '../common/SuccessOverlay';
 
 const ConsultationDelete = ({ consultationId, onBack, onSuccess }) => {
+    const [showSuccess, setShowSuccess] = React.useState(false);
+
     const handleDelete = async () => {
         try {
             await apiClient.delete(`/api/consultations/${consultationId}`);
-            onSuccess();
+            setShowSuccess(true);
+            setTimeout(() => {
+                onSuccess();
+            }, 1500);
         } catch (err) {
             // Error handling handled by the caller or a future toast system
             console.error(err);
@@ -14,7 +20,9 @@ const ConsultationDelete = ({ consultationId, onBack, onSuccess }) => {
     };
 
     return (
-        <DeleteConfirmation
+        <>
+            <SuccessOverlay show={showSuccess} message="Consulta Eliminada con Éxito" />
+            <DeleteConfirmation
             title="¿Eliminar Consulta Médica?"
             itemName="esta consulta"
             onConfirm={handleDelete}
@@ -23,9 +31,10 @@ const ConsultationDelete = ({ consultationId, onBack, onSuccess }) => {
             consequences={[
                 "Se borrará el historial de la consulta.",
                 "Se borrarán automáticamente todas sus graduaciones adjuntas.",
-                "Esta acción no se puede deshacer."
+                "Esta acción es irreversible una vez confirmada."
             ]}
         />
+        </>
     );
 };
 

@@ -25,6 +25,12 @@ namespace OpticBackend.Models
         [ForeignKey("ConsultaId")]
         public virtual Consultation? Consulta { get; set; }
 
+        [Column("paciente_id")]
+        public Guid? PacienteId { get; set; }
+
+        [ForeignKey("PacienteId")]
+        public virtual Patient? Paciente { get; set; }
+
         [Column("total_venta")]
         public decimal? TotalVenta { get; set; } = 0.00m;
 

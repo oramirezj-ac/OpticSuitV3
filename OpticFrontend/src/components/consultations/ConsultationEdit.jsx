@@ -136,7 +136,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
 
     return (
         <div className="consultation-create-container animate-fade-in shadow-xl">
-            <SuccessOverlay show={showSuccess} message="Cambios Guardados" />
+            <SuccessOverlay show={showSuccess} message="Consulta Actualizada con Éxito" />
             
             <div className="module-header">
                 <h2><span className="icon">✏️</span> Editar Consulta</h2>
@@ -174,7 +174,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
 
                         <div className="form-group mb-4">
                             <label>Costo del Servicio ($)</label>
-                            <input type="number" name="costoServicio" className="form-input" value={form.costoServicio} onChange={handleFormChange} />
+                            <input type="number" name="costoServicio" className="form-input" value={form.costoServicio} onChange={handleFormChange} onWheel={(e) => e.target.blur()} />
                         </div>
 
                         {tipoConsulta === 'consulta_medica' && (

@@ -134,8 +134,16 @@ function App() {
         return (
           <SaleDelete
             saleId={navigationParams.saleId}
-            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
-            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onBack={() => 
+              navigationParams.patientId 
+                ? handleNavigate('patient-details', { patientId: navigationParams.patientId }) 
+                : handleNavigate('sales')
+            }
+            onSuccess={() => 
+              navigationParams.patientId 
+                ? handleNavigate('patient-details', { patientId: navigationParams.patientId }) 
+                : handleNavigate('sales')
+            }
           />
         );
       case 'payment-delete':
@@ -143,8 +151,8 @@ function App() {
           <PaymentDelete
             saleId={navigationParams.saleId}
             paymentId={navigationParams.paymentId}
-            onBack={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
-            onSuccess={() => handleNavigate('patient-details', { patientId: navigationParams.patientId })}
+            onBack={() => handleNavigate('sales-details', { saleId: navigationParams.saleId })}
+            onSuccess={() => handleNavigate('sales-details', { saleId: navigationParams.saleId })}
           />
         );
       case 'customization':

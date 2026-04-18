@@ -74,10 +74,19 @@ export const calculateDateFromAge = (age) => {
 export const formatDateForInput = (dateInput) => {
     if (!dateInput) return '';
     
-    if (dateInput instanceof Date) {
-        return dateInput.toISOString().split('T')[0];
+    try {
+        const date = new Date(dateInput);
+        if (isNaN(date.getTime())) return '';
+
+        // Obtenemos los componentes UTC para evitar que la zona horaria local 
+        // mueva la fecha un día atrás o adelante.
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    } catch (e) {
+        // Fallback al método anterior por si las moscas si es un string directo
+        return dateInput.toString().split('T')[0];
     }
-    
-    // Si es un string ISO (ej. 2026-04-01T00:00:00Z)
-    return dateInput.toString().split('T')[0];
 };

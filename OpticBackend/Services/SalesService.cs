@@ -66,6 +66,7 @@ namespace OpticBackend.Services
                         ? (model.Fecha.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(model.Fecha.Value, DateTimeKind.Utc) : model.Fecha.Value.ToUniversalTime())
                         : DateTime.UtcNow,
                     ConsultaId = model.ConsultaId,
+                    PacienteId = model.PacienteId,
                     TotalVenta = model.TotalVenta,
                     SaldoPendiente = model.SaldoPendiente,
                     ObservacionesGenerales = model.ObservacionesGenerales,
@@ -193,9 +194,10 @@ namespace OpticBackend.Services
             return await _context.Ventas
                 .Include(s => s.Detalles)
                 .Include(s => s.Abonos)
+                .Include(s => s.Paciente)
                 .Include(s => s.Consulta)
                 .ThenInclude(c => c.Paciente)
-                .Where(s => s.Consulta.PacienteId == patientId || s.Detalles.Any(d => d.PacienteId == patientId))
+                .Where(s => s.PacienteId == patientId || s.Consulta.PacienteId == patientId || s.Detalles.Any(d => d.PacienteId == patientId))
                 .OrderByDescending(s => s.Fecha)
                 .ToListAsync();
         }
@@ -206,10 +208,17 @@ namespace OpticBackend.Services
             if (sale == null) return null;
 
             if (model.FolioFisico != null) sale.FolioFisico = model.FolioFisico;
-            if (model.TotalVenta.HasValue) sale.TotalVenta = model.TotalVenta.Value;
-            if (model.SaldoPendiente.HasValue) sale.SaldoPendiente = model.SaldoPendiente.Value;
+            if (model.Fecha != null) 
+            {
+                sale.Fecha = model.Fecha.Value.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(model.Fecha.Value, DateTimeKind.Utc) 
+                    : model.Fecha.Value.ToUniversalTime();
+            }
+            if (model.TotalVenta != null) sale.TotalVenta = model.TotalVenta;
+            if (model.SaldoPendiente != null) sale.SaldoPendiente = model.SaldoPendiente;
             if (model.ObservacionesGenerales != null) sale.ObservacionesGenerales = model.ObservacionesGenerales;
 
+            _context.Entry(sale).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
             return await GetSaleByIdAsync(id);
@@ -217,31 +226,54 @@ namespace OpticBackend.Services
 
         public async Task<bool> DeleteSaleAsync(Guid id)
         {
-            var sale = await _context.Ventas.FindAsync(id);
-            if (sale == null) return false;
+            _logger.LogInformation("🗑️ [SalesService] Iniciando proceso de eliminación para venta {Id}", id);
+            
+            var sale = await _context.Ventas
+                .Include(v => v.Detalles)
+                .Include(v => v.Abonos)
+                .Include(v => v.Comisiones)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (sale == null) 
+            {
+                _logger.LogWarning("⚠️ [SalesService] Intento de eliminar venta inexistente {Id}", id);
+                return false;
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var payments = await _context.Abonos.Where(a => a.VentaId == id).ToListAsync();
-                _context.Abonos.RemoveRange(payments);
+                // Limpiar hijos de forma robusta
+                if (sale.Abonos != null && sale.Abonos.Any())
+                {
+                    _logger.LogInformation("   - Eliminando {Count} abonos vinculados", sale.Abonos.Count);
+                    _context.Abonos.RemoveRange(sale.Abonos);
+                }
 
-                var details = await _context.DetalleVentas.Where(d => d.VentaId == id).ToListAsync();
-                _context.DetalleVentas.RemoveRange(details);
+                if (sale.Detalles != null && sale.Detalles.Any())
+                {
+                    _logger.LogInformation("   - Eliminando {Count} detalles de venta", sale.Detalles.Count);
+                    _context.DetalleVentas.RemoveRange(sale.Detalles);
+                }
 
-                var commissions = await _context.ComisionesVentas.Where(c => c.VentaId == id).ToListAsync();
-                _context.ComisionesVentas.RemoveRange(commissions);
+                if (sale.Comisiones != null && sale.Comisiones.Any())
+                {
+                    _logger.LogInformation("   - Eliminando {Count} comisiones vinculadas", sale.Comisiones.Count);
+                    _context.ComisionesVentas.RemoveRange(sale.Comisiones);
+                }
 
                 _context.Ventas.Remove(sale);
                 await _context.SaveChangesAsync();
+                
                 await transaction.CommitAsync();
+                _logger.LogInformation("✅ [SalesService] Venta {Id} eliminada exitosamente", id);
                 
                 return true;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error cascading delete for sale {Id}", id);
+                _logger.LogError(ex, "❌ [SalesService] Error al eliminar venta {Id}", id);
                 throw;
             }
         }
@@ -249,6 +281,7 @@ namespace OpticBackend.Services
         public async Task<IEnumerable<Sale>> GetRecentSalesAsync(int count = 20)
         {
             return await _context.Ventas
+                .Include(v => v.Paciente)
                 .Include(v => v.Consulta)
                 .ThenInclude(c => c.Paciente)
                 .OrderByDescending(v => v.Fecha)
@@ -262,6 +295,7 @@ namespace OpticBackend.Services
 
             // Regla: mostrar todas las notas que coincidan (duplicados incluidos)
             return await _context.Ventas
+                .Include(v => v.Paciente)
                 .Include(v => v.Consulta)
                 .ThenInclude(c => c.Paciente)
                 .Where(v => v.FolioFisico == folio || v.FolioFisico.StartsWith(folio + "-D"))

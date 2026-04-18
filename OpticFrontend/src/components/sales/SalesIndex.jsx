@@ -94,9 +94,11 @@ const SalesIndex = ({ onNavigate }) => {
                                         </td>
                                         <td>{formatDateLong(sale.fecha)}</td>
                                         <td>
-                                            {sale.consulta?.paciente 
-                                                ? `${sale.consulta.paciente.nombre} ${sale.consulta.paciente.apellidoPaterno || ''}` 
-                                                : 'Venta Directa'}
+                                            {sale.paciente 
+                                                ? `${sale.paciente.nombre} ${sale.paciente.apellidoPaterno || ''}` 
+                                                : (sale.consulta?.paciente 
+                                                    ? `${sale.consulta.paciente.nombre} ${sale.consulta.paciente.apellidoPaterno || ''}` 
+                                                    : 'Venta Directa')}
                                         </td>
                                         <td className="font-mono">{formatCurrency(sale.totalVenta)}</td>
                                         <td className={`font-bold ${sale.saldoPendiente > 0 ? 'text-danger' : 'text-success'}`}>

@@ -46,13 +46,23 @@ export const formatPhoneNumber = (phoneNumber) => {
  * @returns {string} 
  */
 export const formatCurrency = (amount, withDecimals = false) => {
-    const num = parseFloat(amount);
+    let num = parseFloat(amount);
     if (isNaN(num)) return '$ 0';
+
+    // Redondear según la precisión deseada para limpiar residuos flotantes (-0.4 -> 0)
+    const factor = withDecimals ? 100 : 1;
+    let rounded = Math.round(num * factor) / factor;
+
+    // JavaScript mantiene el bit de signo en operaciones que resultan en cero (-0)
+    // Convertir estrictamente a 0 positivo para que Intl.NumberFormat no ponga un signo menos
+    if (rounded === 0) {
+        rounded = 0;
+    }
 
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',
         currency: 'MXN',
         minimumFractionDigits: withDecimals ? 2 : 0,
         maximumFractionDigits: withDecimals ? 2 : 0
-    }).format(num);
+    }).format(rounded);
 };

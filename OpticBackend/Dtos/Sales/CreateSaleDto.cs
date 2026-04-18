@@ -8,6 +8,7 @@ namespace OpticBackend.Dtos.Sales
         public string? FolioFisico { get; set; }
         public DateTime? Fecha { get; set; }
         public Guid? ConsultaId { get; set; } // Opcional, pero recomendado
+        public Guid? PacienteId { get; set; } // Opcional, pero recomendado
         public decimal? TotalVenta { get; set; }
         public decimal? SaldoPendiente { get; set; } // Puede calcularse, pero permitir captura manual histórica
         public string? ObservacionesGenerales { get; set; }
