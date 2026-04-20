@@ -1,7 +1,0 @@
-Refactor PaymentManagement for consistency with patient details
-
-- Integrated PaymentModal and EditSaleModal to unify the sales management experience.
-- Replaced the inline payment form with a cleaner modal-based interaction.
-- Added functionality to edit existing sales and payments directly from the management view.
-- Updated UI layout to include a 2x2 summary grid for key sale metrics (Folio, Date, Total, Balance).
-- Enhanced navigation to redirect users back to the specific patient's sales tab.

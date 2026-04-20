@@ -50,7 +50,12 @@ The application is structured around a **Modular CRUD Architecture**, allowing t
 ### Installation & Running
 1.  **Clone the repository**.
 2.  **Navigate to the project root**.
-3.  **Start the application**:
+3.  **Configure environment variables**:
+    Create a `.env` file in the root directory based on `.env.example`:
+    ```bash
+    cp .env.example .env
+    ```
+4.  **Start the application**:
     ```bash
     docker-compose up --build
     ```
