@@ -12,6 +12,11 @@ namespace OpticBackend.Services.Interfaces
         Task<bool> DeleteSaleAsync(Guid id);
         Task<IEnumerable<Sale>> GetRecentSalesAsync(int count = 20);
         Task<IEnumerable<Sale>> SearchSalesByFolioAsync(string folio);
+        Task<IEnumerable<int>> GetSalesYearsAsync();
+        Task<IEnumerable<Sale>> GetSalesByYearAsync(int year);
+        Task<IEnumerable<Sale>> GetCounterSalesAsync();
+        Task<Sale?> CreateCounterSaleAsync(string concept, decimal amount, DateTime date, string userId);
+        Task<Sale?> RegisterCancelledFolioAsync(string folio, DateTime date, string userId);
 
         // Pagos / Abonos
         Task<Sale?> AddPaymentAsync(Guid saleId, CreatePaymentDto model);

@@ -6,7 +6,8 @@ const KEYS = {
     TOKEN: 'token',
     USER_EMAIL: 'userEmail',
     USER_SCHEMA: 'userSchema',
-    USER_ROLES: 'userRoles'
+    USER_ROLES: 'userRoles',
+    USER_ID: 'userId'
 };
 
 export const authService = {
@@ -16,6 +17,7 @@ export const authService = {
      */
     setAuth: (data) => {
         if (data.token) sessionStorage.setItem(KEYS.TOKEN, data.token);
+        if (data.userId) sessionStorage.setItem(KEYS.USER_ID, data.userId);
         if (data.email) sessionStorage.setItem(KEYS.USER_EMAIL, data.email);
         if (data.schema) sessionStorage.setItem(KEYS.USER_SCHEMA, data.schema);
         if (data.roles) {
@@ -34,6 +36,12 @@ export const authService = {
      * @returns {string}
      */
     getUserEmail: () => sessionStorage.getItem(KEYS.USER_EMAIL) || 'Usuario',
+
+    /**
+     * Obtiene el ID del usuario logueado
+     * @returns {string|null}
+     */
+    getUserId: () => sessionStorage.getItem(KEYS.USER_ID),
 
     /**
      * Obtiene el esquema (sucursal) del usuario logueado
@@ -60,6 +68,7 @@ export const authService = {
      */
     clearAuth: () => {
         sessionStorage.removeItem(KEYS.TOKEN);
+        sessionStorage.removeItem(KEYS.USER_ID);
         sessionStorage.removeItem(KEYS.USER_EMAIL);
         sessionStorage.removeItem(KEYS.USER_SCHEMA);
         sessionStorage.removeItem(KEYS.USER_ROLES);

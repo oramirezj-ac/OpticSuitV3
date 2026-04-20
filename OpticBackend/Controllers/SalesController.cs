@@ -110,6 +110,42 @@ namespace OpticBackend.Controllers
             }
         }
 
+        // --- NUEVOS ENDPOINTS REDISEÑO ---
+
+        [HttpGet("years")]
+        public async Task<ActionResult<IEnumerable<int>>> GetSalesYears()
+        {
+            return Ok(await _salesService.GetSalesYearsAsync());
+        }
+
+        [HttpGet("year/{year}")]
+        public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByYear(int year)
+        {
+            return Ok(await _salesService.GetSalesByYearAsync(year));
+        }
+
+        [HttpGet("counter")]
+        public async Task<ActionResult<IEnumerable<Sale>>> GetCounterSales()
+        {
+            return Ok(await _salesService.GetCounterSalesAsync());
+        }
+
+        [HttpPost("counter")]
+        public async Task<ActionResult<Sale>> CreateCounterSale(CreateCounterSaleDto model)
+        {
+            var sale = await _salesService.CreateCounterSaleAsync(model.Concept, model.Amount, model.Date, model.UserId ?? "");
+            if (sale == null) return StatusCode(500, new { message = "Error al crear la venta de mostrador" });
+            return Ok(sale);
+        }
+
+        [HttpPost("cancel-folio")]
+        public async Task<ActionResult<Sale>> RegisterCancelledFolio(RegisterCancelledFolioDto model)
+        {
+            var sale = await _salesService.RegisterCancelledFolioAsync(model.Folio, model.Date, model.UserId ?? "");
+            if (sale == null) return StatusCode(500, new { message = "Error al registrar el folio cancelado" });
+            return Ok(sale);
+        }
+
         // --- ENDPOINTS DE ABONOS ---
 
         // POST: api/sales/{saleId}/payments

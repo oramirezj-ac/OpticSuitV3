@@ -303,6 +303,127 @@ namespace OpticBackend.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<int>> GetSalesYearsAsync()
+        {
+            return await _context.Ventas
+                .Where(v => v.Fecha.HasValue && !(v.FolioFisico != null && v.FolioFisico.StartsWith("VM-")))
+                .Select(v => v.Fecha.Value.Year)
+                .Distinct()
+                .OrderByDescending(y => y)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Sale>> GetSalesByYearAsync(int year)
+        {
+            var sales = await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .Where(v => v.Fecha.HasValue && v.Fecha.Value.Year == year && !(v.FolioFisico != null && v.FolioFisico.StartsWith("VM-")))
+                .ToListAsync();
+
+            // Ordenamiento inteligente: PadLeft(4, '0') para folios numéricos de 4 dígitos
+            return sales.OrderByDescending(v => {
+                if (string.IsNullOrEmpty(v.FolioFisico)) return "";
+                // Limpiar sufijo -D para el sorteo base
+                var baseFolio = v.FolioFisico.Split("-D")[0];
+                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
+            });
+        }
+
+        public async Task<IEnumerable<Sale>> GetCounterSalesAsync()
+        {
+            return await _context.Ventas
+                .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
+                .OrderByDescending(v => v.Fecha)
+                .ToListAsync();
+        }
+
+        public async Task<Sale?> CreateCounterSaleAsync(string concept, decimal amount, DateTime date, string userId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Generar Folio Interno VM-
+                var lastVm = await _context.Ventas
+                    .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
+                    .OrderByDescending(v => v.FolioFisico)
+                    .Select(v => v.FolioFisico)
+                    .FirstOrDefaultAsync();
+                
+                int nextId = 1;
+                if (lastVm != null)
+                {
+                    if (int.TryParse(lastVm.Replace("VM-", ""), out int lastId)) nextId = lastId + 1;
+                }
+                string newFolio = $"VM-{nextId:D4}";
+
+                // 2. Buscar o crear Paciente "Público General"
+                var genPatient = await _context.Pacientes.FirstOrDefaultAsync(p => p.Nombre == "Público General" && p.ApellidoPaterno == "Mostrador");
+                if (genPatient == null)
+                {
+                    genPatient = new Patient { Nombre = "Público General", ApellidoPaterno = "Mostrador", Telefono = "0000000000" };
+                    _context.Pacientes.Add(genPatient);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 3. Crear Venta
+                var sale = new Sale
+                {
+                    FolioFisico = newFolio,
+                    Fecha = DateTime.SpecifyKind(date, DateTimeKind.Utc),
+                    PacienteId = genPatient.Id,
+                    TotalVenta = amount,
+                    SaldoPendiente = 0,
+                    ObservacionesGenerales = concept,
+                    UsuarioId = userId,
+                    Estado = "Activa"
+                };
+
+                _context.Ventas.Add(sale);
+                await _context.SaveChangesAsync();
+
+                // 4. Crear Abono Automático (Pago Completo)
+                var payment = new Payment
+                {
+                    VentaId = sale.Id,
+                    Monto = amount,
+                    FechaPago = DateTime.SpecifyKind(date, DateTimeKind.Utc),
+                    MetodoPago = "Efectivo",
+                    UsuarioId = userId
+                };
+                _context.Abonos.Add(payment);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return sale;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error creating counter sale");
+                return null;
+            }
+        }
+
+        public async Task<Sale?> RegisterCancelledFolioAsync(string folio, DateTime date, string userId)
+        {
+            var sale = new Sale
+            {
+                FolioFisico = folio,
+                Fecha = DateTime.SpecifyKind(date, DateTimeKind.Utc),
+                Estado = "Cancelada",
+                ObservacionesGenerales = "Folio anulado manual",
+                TotalVenta = 0,
+                SaldoPendiente = 0,
+                UsuarioId = userId
+            };
+
+            _context.Ventas.Add(sale);
+            await _context.SaveChangesAsync();
+            return sale;
+        }
+
         // --- ABONOS / PAGOS ---
 
         private async Task RecalculateSaleBalanceAsync(Guid saleId)

@@ -55,6 +55,7 @@ namespace OpticBackend.Controllers
             return Ok(new
             {
                 token,
+                userId = user.Id,
                 email = user.Email,
                 nombreCompleto = user.NombreCompleto,
                 schema = user.NombreEsquema,
