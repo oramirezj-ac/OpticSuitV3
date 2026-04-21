@@ -7,7 +7,7 @@ import './SalesIndex.css';
 
 const SalesIndex = ({ onNavigate }) => {
     // --- States ---
-    const [activeTab, setActiveTab] = useState('notas'); // 'notas' | 'mostrador'
+    const [activeTab, setActiveTab] = useState('notas'); // 'notas' | 'mostrador' | 'consultas'
     const [sales, setSales] = useState([]);
     const [availableYears, setAvailableYears] = useState([]);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -28,8 +28,10 @@ const SalesIndex = ({ onNavigate }) => {
     useEffect(() => {
         if (activeTab === 'notas') {
             fetchSalesByYear(selectedYear);
-        } else {
+        } else if (activeTab === 'mostrador') {
             fetchCounterSales();
+        } else {
+            fetchConsultationSales();
         }
     }, [activeTab, selectedYear]);
 
@@ -70,10 +72,24 @@ const SalesIndex = ({ onNavigate }) => {
         }
     };
 
+    const fetchConsultationSales = async () => {
+        setLoading(true);
+        try {
+            const data = await apiClient.get('/api/sales/consultations');
+            setSales(data || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchTerm) {
-            activeTab === 'notas' ? fetchSalesByYear(selectedYear) : fetchCounterSales();
+            if (activeTab === 'notas') fetchSalesByYear(selectedYear);
+            else if (activeTab === 'mostrador') fetchCounterSales();
+            else fetchConsultationSales();
             return;
         }
         setLoading(true);
@@ -134,8 +150,17 @@ const SalesIndex = ({ onNavigate }) => {
     // --- Helpers ---
     const isFolioValid = (folio) => {
         if (!folio) return true;
+        // Solo para tab de notas validamos que sea numérico de 4 dígitos
+        if (activeTab !== 'notas') return true; 
         const base = folio.split('-D')[0];
-        return base.length === 4;
+        return base.length === 4 && !isNaN(base);
+    };
+
+    const getFolioLabel = (sale) => {
+        if (sale.folioFisico?.startsWith('VM-')) return 'MOSTRADOR';
+        if (sale.folioFisico?.startsWith('MED-')) return 'C. MÉDICA';
+        if (sale.folioFisico?.startsWith('CL-')) return 'GRADUACIÓN';
+        return sale.folioFisico;
     };
 
     // --- Render Components ---
@@ -167,6 +192,12 @@ const SalesIndex = ({ onNavigate }) => {
                 >
                     Ventas de Mostrador (Libreta)
                 </button>
+                <button 
+                    className={`tab-btn ${activeTab === 'consultations' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('consultations')}
+                >
+                    Consultas y Otros
+                </button>
             </div>
 
             {/* Year Selector (Only for Notas) */}
@@ -189,7 +220,7 @@ const SalesIndex = ({ onNavigate }) => {
                 <form onSubmit={handleSearch} className="flex gap-4">
                     <input 
                         type="text" 
-                        placeholder="Buscar folio en todos los años..." 
+                        placeholder="Buscar folio en toda la categoría..." 
                         className="form-input flex-1"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -200,7 +231,9 @@ const SalesIndex = ({ onNavigate }) => {
                         className="btn-icon" 
                         onClick={() => {
                             setSearchTerm(''); 
-                            activeTab === 'notas' ? fetchSalesByYear(selectedYear) : fetchCounterSales();
+                            if (activeTab === 'notas') fetchSalesByYear(selectedYear);
+                            else if (activeTab === 'mostrador') fetchCounterSales();
+                            else fetchConsultationSales();
                         }}
                         title="Limpiar"
                     >
@@ -220,9 +253,9 @@ const SalesIndex = ({ onNavigate }) => {
                             <tr>
                                 <th>Folio</th>
                                 <th>Fecha</th>
-                                <th>{activeTab === 'notas' ? 'Paciente' : 'Concepto'}</th>
+                                <th>{activeTab === 'mostrador' ? 'Concepto' : 'Paciente / Motivo'}</th>
                                 <th>Total</th>
-                                {activeTab === 'notas' && <th>Saldo</th>}
+                                {activeTab !== 'mostrador' && <th>Saldo</th>}
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -232,10 +265,10 @@ const SalesIndex = ({ onNavigate }) => {
                                     <tr key={sale.id} className={sale.estado === 'Cancelada' ? 'opacity-60' : ''}>
                                         <td>
                                             <div className="flex flex-col">
-                                                <span className="font-bold">
-                                                    {sale.folioFisico?.startsWith('VM-') ? 'MOSTRADOR' : sale.folioFisico}
+                                                <span className={`font-bold ${activeTab === 'consultations' ? 'text-xs text-blue-600' : ''}`}>
+                                                    {getFolioLabel(sale)}
                                                 </span>
-                                                {!isFolioValid(sale.folioFisico) && (
+                                                {activeTab === 'notas' && !isFolioValid(sale.folioFisico) && (
                                                     <span className="folio-warning">⚠️ No tiene 4 dígitos</span>
                                                 )}
                                             </div>
@@ -246,20 +279,29 @@ const SalesIndex = ({ onNavigate }) => {
                                                 <span className="status-cancelled">Nota Cancelada</span>
                                             ) : (
                                                 <>
-                                                    {activeTab === 'notas' ? (
-                                                        sale.paciente 
-                                                            ? `${sale.paciente.nombre} ${sale.paciente.apellidoPaterno || ''}` 
-                                                            : (sale.consulta?.paciente 
-                                                                ? `${sale.consulta.paciente.nombre} ${sale.consulta.paciente.apellidoPaterno || ''}` 
-                                                                : 'Venta Directa')
-                                                    ) : (
+                                                    {activeTab === 'mostrador' ? (
                                                         <span className="font-medium">{sale.observacionesGenerales}</span>
+                                                    ) : (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold">
+                                                                {sale.paciente 
+                                                                    ? `${sale.paciente.nombre} ${sale.paciente.apellidoPaterno || ''}` 
+                                                                    : (sale.consulta?.paciente 
+                                                                        ? `${sale.consulta.paciente.nombre} ${sale.consulta.paciente.apellidoPaterno || ''}` 
+                                                                        : 'Venta Directa')}
+                                                            </span>
+                                                            {activeTab === 'consultations' && sale.consulta && (
+                                                                <span className="text-xs text-slate-500 italic">
+                                                                    {sale.consulta.motivoConsulta}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </>
                                             )}
                                         </td>
                                         <td className="font-mono">{formatCurrency(sale.totalVenta)}</td>
-                                        {activeTab === 'notas' && (
+                                        {activeTab !== 'mostrador' && (
                                             <td className={`font-bold ${sale.saldoPendiente > 0 ? 'text-danger' : 'text-success'}`}>
                                                 {formatCurrency(sale.saldoPendiente)}
                                             </td>
@@ -288,7 +330,7 @@ const SalesIndex = ({ onNavigate }) => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={activeTab === 'notas' ? "6" : "5"} className="text-center p-8 text-slate-400">
+                                    <td colSpan={6} className="text-center p-8 text-slate-400">
                                         No se encontraron registros.
                                     </td>
                                 </tr>

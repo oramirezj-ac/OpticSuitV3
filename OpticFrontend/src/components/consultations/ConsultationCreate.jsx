@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
+import { authService } from '../../services/authService';
 import SuccessOverlay from '../common/SuccessOverlay';
 import './ConsultationCreate.css';
 
@@ -34,6 +35,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState(null);
+    const [metodoPago, setMetodoPago] = useState('Efectivo');
 
     useEffect(() => {
         setForm(prev => ({
@@ -90,7 +92,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
 
     const calculateTotal = () => {
         const productTotal = selectedProducts.reduce((sum, p) => sum + p.price, 0);
-        return parseFloat(form.costoServicio) + productTotal;
+        return parseFloat(form.costoServicio || 0) + productTotal;
     };
 
     const handleSave = async (e) => {
@@ -107,35 +109,51 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                 productos: selectedProducts.map(p => p.name).join(', ')
             } : {};
 
+            const total = calculateTotal();
+
             const payload = {
                 pacienteId: selectedPatient.id,
                 fecha: form.fecha ? new Date(form.fecha + 'T00:00:00Z').toISOString() : new Date().toISOString(),
                 tipoConsulta,
                 motivoConsulta: form.motivoConsulta,
                 observaciones: form.observaciones,
-                costoServicio: calculateTotal(),
-                estadoFinanciero: 'pendiente',
+                costoServicio: total,
+                estadoFinanciero: total > 0 ? 'pagado' : 'completo',
                 detallesClinicos
             };
 
             const response = await apiClient.post('/api/consultations', payload);
             
-            // AUTOMATIC SALE CREATION for Medical Consultations with products or cost
-            if (tipoConsulta === 'consulta_medica' && calculateTotal() > 0) {
+            // AUTOMATIC SALE CREATION if total > 0
+            if (total > 0) {
+                const now = new Date();
+                const timestamp = now.getFullYear() + 
+                                String(now.getMonth() + 1).padStart(2, '0') + 
+                                String(now.getDate()).padStart(2, '0') + "-" +
+                                String(now.getHours()).padStart(2, '0') + 
+                                String(now.getMinutes()).padStart(2, '0');
+                
+                const prefix = tipoConsulta === 'consulta_medica' ? 'MED-' : 'CL-';
+                const loggedUserId = authService.getUserId() || null;
+
                 const salePayload = {
                     pacienteId: selectedPatient.id,
                     consultaId: response.id,
-                    folioFisico: `MED-${Math.floor(1000 + Math.random() * 9000)}`,
-                    totalVenta: calculateTotal(),
-                    saldoPendiente: calculateTotal(),
+                    folioFisico: `${prefix}${timestamp}`,
+                    totalVenta: total,
+                    saldoPendiente: 0, // Fully paid
+                    observacionesGenerales: `Cobro por ${tipoConsulta === 'consulta_medica' ? 'Consulta Médica' : 'Graduación'}`,
+                    usuarioId: null,
                     detalles: [
-                        { descripcion: `Consulta Médica: ${form.motivoConsulta}`, cantidad: 1, precioUnitario: parseFloat(form.costoServicio), subtotal: parseFloat(form.costoServicio) },
+                        { descripcion: `${tipoConsulta === 'consulta_medica' ? 'Consulta Médica' : 'Graduación'}: ${form.motivoConsulta}`, cantidad: 1, precioAplicado: parseFloat(form.costoServicio || 0) },
                         ...selectedProducts.map(p => ({
                             descripcion: `Farmacia: ${p.name}`,
                             cantidad: 1,
-                            precioUnitario: p.price,
-                            subtotal: p.price
+                            precioAplicado: p.price
                         }))
+                    ],
+                    abonosIniciales: [
+                        { monto: total, metodoPago: metodoPago, fechaPago: new Date().toISOString(), usuarioId: null }
                     ]
                 };
                 await apiClient.post('/api/sales', salePayload);
@@ -144,13 +162,11 @@ const ConsultationCreate = ({ onNavigate, params }) => {
             setShowSuccess(true);
             setTimeout(() => {
                 if (tipoConsulta === 'consulta_lentes' && params?.patientId) {
-                    // Go directly to graduation CRUD for this consultation
                     onNavigate('consultation-graduations', {
                         consultationId: response.id,
                         patientId: params.patientId
                     });
                 } else if (params?.patientId) {
-                    // Medical: return to patient file
                     onNavigate('patient-details', { patientId: params.patientId });
                 } else {
                     onNavigate('consultations');
@@ -202,13 +218,23 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                                 <input type="text" name="motivoConsulta" className="form-input" value={form.motivoConsulta} onChange={handleFormChange} required />
                             </div>
 
+                            <div className="form-group mb-4">
+                                <label>Costo de Consulta / Servicio ($)</label>
+                                <div className="flex gap-2">
+                                    <input type="number" name="costoServicio" className="form-input flex-1" value={form.costoServicio} onChange={handleFormChange} onWheel={(e) => e.target.blur()} />
+                                    {tipoConsulta === 'consulta_medica' ? (
+                                        <>
+                                            <button type="button" className="btn-action-small" onClick={() => setForm({...form, costoServicio: 0})}>Cortesía</button>
+                                            <button type="button" className="btn-action-small" onClick={() => setForm({...form, costoServicio: 0})}>Seguimiento</button>
+                                        </>
+                                    ) : (
+                                        <button type="button" className="btn-action-small" onClick={() => setForm({...form, costoServicio: 300})}>Solo Graduación ($300)</button>
+                                    )}
+                                </div>
+                            </div>
+
                             {tipoConsulta === 'consulta_medica' && (
                                 <>
-                                    <div className="form-group mb-4">
-                                        <label>Costo Consulta Base ($)</label>
-                                        <input type="number" name="costoServicio" className="form-input" value={form.costoServicio} onChange={handleFormChange} onWheel={(e) => e.target.blur()} />
-                                    </div>
-
                                     <div className="form-group md:col-span-2 mb-4">
                                         <label className="mb-3 block font-bold text-slate-700">Productos de Farmacia (Tratamiento Sugerido)</label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -246,9 +272,29 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                             </div>
                         </div>
 
-                        <div className="total-summary-bar flex justify-between items-center p-4 bg-slate-50 rounded-lg border border-slate-200 mt-6">
-                            <div className="text-slate-600 font-medium">Resumen Financiero:</div>
-                            <div className="text-2xl font-black text-slate-800">Total a Cobrar: <span className="text-blue-600">${calculateTotal()}</span></div>
+                        <div className="total-summary-bar flex flex-col md:flex-row justify-between items-center p-6 bg-slate-50 rounded-lg border border-slate-200 mt-6 gap-4">
+                            <div className="flex flex-col gap-1">
+                                <div className="text-2xl font-black text-slate-800">Total: <span className="text-blue-600">${calculateTotal()}</span></div>
+                                <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Se generará nota auto-pagada</div>
+                            </div>
+
+                            {calculateTotal() > 0 && (
+                                <div className="flex flex-col items-end gap-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Método de Pago</label>
+                                    <div className="flex gap-2">
+                                        {['Efectivo', 'Tarjeta', 'Transferencia'].map(m => (
+                                            <button 
+                                                key={m} 
+                                                type="button" 
+                                                className={`payment-method-btn ${metodoPago === m ? 'active' : ''}`}
+                                                onClick={() => setMetodoPago(m)}
+                                            >
+                                                {m}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {error && <div className="alert alert-danger mt-4">{error}</div>}
@@ -256,7 +302,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
                         <div className="form-actions mt-8 flex justify-end gap-4">
                             <button type="button" className="btn-secondary" onClick={() => params?.patientId ? onNavigate('patient-details', { patientId: params.patientId }) : onNavigate('consultations')}>Cancelar</button>
                             <button type="submit" className="btn-primary btn-xl" disabled={loading}>
-                                {loading ? 'Guardando...' : 'Finalizar y Generar Venta ➔'}
+                                {loading ? 'Guardando...' : (calculateTotal() > 0 ? 'Finalizar y Cobrar ➔' : 'Finalizar Consulta ➔')}
                             </button>
                         </div>
                     </form>

@@ -316,14 +316,20 @@ namespace OpticBackend.Services
         public async Task<IEnumerable<Sale>> GetSalesByYearAsync(int year)
         {
             var sales = await _context.Ventas
-                .Include(v => v.Paciente)
                 .Include(v => v.Consulta)
                 .ThenInclude(c => c.Paciente)
-                .Where(v => v.Fecha.HasValue && v.Fecha.Value.Year == year && !(v.FolioFisico != null && v.FolioFisico.StartsWith("VM-")))
+                .Where(v => v.Fecha.HasValue && v.Fecha.Value.Year == year)
                 .ToListAsync();
 
+            // Filtrado manual en memoria para asegurar que los prefijos no se cuelen (Case-insensitive & Trim)
+            var filteredSales = sales.Where(v => {
+                if (string.IsNullOrEmpty(v.FolioFisico)) return true;
+                string folio = v.FolioFisico.ToUpper().Trim();
+                return !(folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-"));
+            }).ToList();
+
             // Ordenamiento inteligente: PadLeft(4, '0') para folios numéricos de 4 dígitos
-            return sales.OrderByDescending(v => {
+            return filteredSales.OrderByDescending(v => {
                 if (string.IsNullOrEmpty(v.FolioFisico)) return "";
                 // Limpiar sufijo -D para el sorteo base
                 var baseFolio = v.FolioFisico.Split("-D")[0];
@@ -335,8 +341,22 @@ namespace OpticBackend.Services
         {
             return await _context.Ventas
                 .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
-                .OrderByDescending(v => v.Fecha)
                 .ToListAsync();
+        }
+        
+        public async Task<IEnumerable<Sale>> GetConsultationSalesAsync()
+        {
+            var sales = await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .ToListAsync();
+
+            return sales.Where(v => {
+                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
+                string folio = v.FolioFisico.ToUpper().Trim();
+                return folio.StartsWith("MED-") || folio.StartsWith("CL-");
+            }).OrderByDescending(v => v.Fecha);
         }
 
         public async Task<Sale?> CreateCounterSaleAsync(string concept, decimal amount, DateTime date, string userId)
