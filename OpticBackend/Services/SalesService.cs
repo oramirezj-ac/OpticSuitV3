@@ -186,6 +186,7 @@ namespace OpticBackend.Services
             return await _context.Ventas
                 .Include(v => v.Detalles)
                 .Include(v => v.Abonos)
+                .Include(v => v.Comisiones)
                 .FirstOrDefaultAsync(v => v.Id == id);
         }
 
@@ -194,6 +195,7 @@ namespace OpticBackend.Services
             return await _context.Ventas
                 .Include(s => s.Detalles)
                 .Include(s => s.Abonos)
+                .Include(s => s.Comisiones)
                 .Include(s => s.Paciente)
                 .Include(s => s.Consulta)
                 .ThenInclude(c => c.Paciente)
@@ -204,7 +206,7 @@ namespace OpticBackend.Services
 
         public async Task<Sale?> UpdateSaleAsync(Guid id, UpdateSaleDto model)
         {
-            var sale = await _context.Ventas.FindAsync(id);
+            var sale = await _context.Ventas.Include(v => v.Comisiones).FirstOrDefaultAsync(v => v.Id == id);
             if (sale == null) return null;
 
             if (model.FolioFisico != null) sale.FolioFisico = model.FolioFisico;
@@ -217,6 +219,36 @@ namespace OpticBackend.Services
             if (model.TotalVenta != null) sale.TotalVenta = model.TotalVenta;
             if (model.SaldoPendiente != null) sale.SaldoPendiente = model.SaldoPendiente;
             if (model.ObservacionesGenerales != null) sale.ObservacionesGenerales = model.ObservacionesGenerales;
+
+            // Logica de Comisiones
+            if (model.VendedoresIds != null)
+            {
+                // Limpiar comisiones anteriores
+                if (sale.Comisiones != null && sale.Comisiones.Any())
+                {
+                    _context.ComisionesVentas.RemoveRange(sale.Comisiones);
+                }
+
+                // Generar nuevas comisiones
+                if (model.VendedoresIds.Any() && model.MontoComisionTotal.HasValue && model.MontoComisionTotal.Value > 0)
+                {
+                    int count = model.VendedoresIds.Count;
+                    decimal montoPorVendedor = model.MontoComisionTotal.Value / count;
+
+                    foreach (var vendedorId in model.VendedoresIds)
+                    {
+                        var commission = new SalesCommission
+                        {
+                            VentaId = sale.Id,
+                            UsuarioId = vendedorId,
+                            MontoComision = montoPorVendedor,
+                            PuntosVenta = 0,
+                            FechaRegistro = DateTime.UtcNow
+                        };
+                        _context.ComisionesVentas.Add(commission);
+                    }
+                }
+            }
 
             _context.Entry(sale).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -284,6 +316,7 @@ namespace OpticBackend.Services
                 .Include(v => v.Paciente)
                 .Include(v => v.Consulta)
                 .ThenInclude(c => c.Paciente)
+                .Include(v => v.Comisiones)
                 .OrderByDescending(v => v.Fecha)
                 .Take(count)
                 .ToListAsync();

@@ -36,8 +36,13 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var years = await _context.Pacientes
-                    .Select(p => p.FechaRegistro.Year)
+                var years = await _context.Ventas
+                    .Where(v => v.Fecha.HasValue && 
+                               v.FolioFisico != null && 
+                               !v.FolioFisico.StartsWith("MED-") && 
+                               !v.FolioFisico.StartsWith("CL-") && 
+                               !v.FolioFisico.StartsWith("VM-"))
+                    .Select(v => v.Fecha.Value.Year)
                     .Distinct()
                     .OrderByDescending(y => y)
                     .ToListAsync();
@@ -52,7 +57,7 @@ namespace OpticBackend.Controllers
 
         // GET: api/patients/audit
         [HttpGet("audit")]
-        public async Task<ActionResult<IEnumerable<PatientDto>>> GetAuditPatients([FromQuery] int year, [FromQuery] string letter)
+        public async Task<ActionResult<IEnumerable<PatientAuditDto>>> GetAuditPatients([FromQuery] int year, [FromQuery] string letter)
         {
             try
             {
@@ -61,51 +66,71 @@ namespace OpticBackend.Controllers
                     return BadRequest(new { message = "La letra inicial es requerida" });
                 }
 
-                var letterLower = letter.ToLower().Substring(0, 1);
-
-                // Filter logic:
-                // Year matches
-                // ApellidoPaterno starts with letter
+                var letterUpper = letter.ToUpper().Substring(0, 1);
                 
-                var query = _context.Pacientes
-                    .Where(p => p.FechaRegistro.Year == year && 
-                                p.ApellidoPaterno != null && 
-                                p.ApellidoPaterno.ToLower().StartsWith(letterLower));
+                // For accent handling in initial letter (common in Spanish)
+                string letterSearch = letterUpper;
+                if (letterUpper == "A") letterSearch = "[AÁ]";
+                else if (letterUpper == "E") letterSearch = "[EÉ]";
+                else if (letterUpper == "I") letterSearch = "[IÍ]";
+                else if (letterUpper == "O") letterSearch = "[OÓ]";
+                else if (letterUpper == "U") letterSearch = "[UÚÜ]";
+                else letterSearch = letterUpper;
 
-                // Sort: Apellido Paterno ASC, Apellido Materno ASC, Nombre ASC
-                var patients = await query
-                    .OrderBy(p => p.ApellidoPaterno)
-                    .ThenBy(p => p.ApellidoMaterno)
-                    .ThenBy(p => p.Nombre)
-                    .ToListAsync();
+                // Build a regex pattern for StartsWith
+                string pattern = "^" + (letterSearch.StartsWith("[") ? letterSearch : Regex.Escape(letterSearch));
 
-                var dtos = patients.Select(p => new PatientDto
-                {
-                    Id = p.Id,
-                    Nombre = p.Nombre,
-                    ApellidoPaterno = p.ApellidoPaterno,
-                    ApellidoMaterno = p.ApellidoMaterno,
-                    Telefono = p.Telefono,
-                    Email = p.Email,
-                    Direccion = p.Direccion,
-                    Edad = p.FechaNacimiento.CalculateAge(), 
-                    Ocupacion = p.Ocupacion,
-                    Notas = p.Notas,
-                    FechaRegistro = p.FechaRegistro,
-                    EstaActivo = p.EstaActivo
-                }).ToList();
+                _logger.LogInformation("Auditing year {Year}, letter {Letter} (pattern: {Pattern})", year, letter, pattern);
 
-                return Ok(dtos);
+                // Use Include to ensure we have the patient data if joined
+                var query = from v in _context.Ventas
+                            join p in _context.Pacientes on v.PacienteId equals p.Id
+                            where v.Fecha.HasValue && v.Fecha.Value.Year == year &&
+                                  v.FolioFisico != null
+                            select new { v, p };
+
+                var data = await query.ToListAsync();
+                
+                var filtered = data
+                    .Where(x => {
+                        var f = x.v.FolioFisico?.ToUpper().Trim() ?? "";
+                        // Exclude service prefixes
+                        bool isService = f.StartsWith("MED-") || f.StartsWith("CL-") || f.StartsWith("VM-");
+                        if (isService) return false;
+
+                        // Check initial letter with accent consideration
+                        var ap = x.p.ApellidoPaterno?.Trim() ?? "";
+                        if (string.IsNullOrEmpty(ap)) return false;
+                        
+                        return Regex.IsMatch(ap, pattern, RegexOptions.IgnoreCase);
+                    })
+                    .OrderBy(x => x.p.ApellidoPaterno)
+                    .ThenBy(x => x.p.ApellidoMaterno)
+                    .ThenBy(x => x.p.Nombre)
+                    .ThenBy(x => x.v.Fecha)
+                    .Select(x => new PatientAuditDto
+                    {
+                        PatientId = x.p.Id,
+                        NombreCompleto = $"{x.p.Nombre} {x.p.ApellidoPaterno} {x.p.ApellidoMaterno}".Trim(),
+                        FolioFisico = x.v.FolioFisico,
+                        FechaVenta = x.v.Fecha,
+                        ApellidoPaterno = x.p.ApellidoPaterno,
+                        ApellidoMaterno = x.p.ApellidoMaterno,
+                        Nombre = x.p.Nombre
+                    })
+                    .ToList();
+
+                _logger.LogInformation("Found {Count} audit records", filtered.Count);
+                return Ok(filtered);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting audit patients");
+                _logger.LogError(ex, "Error getting audit patients with letter {Letter}", letter);
                 return StatusCode(500, new { message = "Error al realizar la auditoría" });
             }
         }
 
         // GET: api/patients
-        [HttpGet]
         [HttpGet]
         public async Task<ActionResult<object>> GetPatients(
             [FromQuery] string? search, 
@@ -185,9 +210,11 @@ namespace OpticBackend.Controllers
             }
         }
 
-        // GET: api/patients/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PatientDto>> GetPatient(Guid id) // Changed to Guid
+        // GET: api/patients/search (Check if search is used)
+        
+        // GET: api/patients/{id:guid}
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult<PatientDto>> GetPatient(Guid id) // Added :guid constraint
         {
             var patient = await _context.Pacientes.FindAsync(id);
 

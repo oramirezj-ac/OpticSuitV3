@@ -3,10 +3,11 @@ import PatientForm from './PatientForm';
 import './PatientsIndex.css';
 import './../users/UsersIndex.css'; // Reusing generic table styles
 import { formatPhoneNumber } from '../../utils/formatUtils';
+import { formatDateLong } from '../../utils/dateUtils';
 import { getPatients, getAuditPatients, getAuditYears, deletePatient } from '../../services/patientApi';
 
 const PatientsIndex = ({ onNavigate }) => {
-    // Tab State: 'recent', 'search', 'all'
+    // Tab State: 'recent', 'search', 'all', 'audit'
     const [activeTab, setActiveTab] = useState('recent');
 
     // Data State
@@ -92,7 +93,7 @@ const PatientsIndex = ({ onNavigate }) => {
     const handleTabChange = (tab) => {
         setActiveTab(tab);
         setPage(1); // Reset page on tab switch
-        setSearchTerm(''); // Clear search on tab switch maybe? Or keep it? Keeping it simple.
+        setSearchTerm(''); // Clear search on tab switch
     };
 
     const handleSearchSubmit = (e) => {
@@ -155,7 +156,7 @@ const PatientsIndex = ({ onNavigate }) => {
                     onClick={() => handleTabChange('audit')}
                     style={{ padding: '10px 15px', border: 'none', background: 'none', borderBottom: activeTab === 'audit' ? '2px solid #3b82f6' : 'none', cursor: 'pointer', fontWeight: activeTab === 'audit' ? 'bold' : 'normal' }}
                 >
-                    Auditoría
+                    Auditoría (Física)
                 </button>
             </div>
 
@@ -179,7 +180,7 @@ const PatientsIndex = ({ onNavigate }) => {
             {activeTab === 'audit' && (
                 <div className="audit-filters" style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#64748b' }}>Año de Registro</label>
+                        <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#64748b' }}>Año de Venta</label>
                         <select
                             className="form-input"
                             value={auditYear}
@@ -213,7 +214,7 @@ const PatientsIndex = ({ onNavigate }) => {
                             disabled={!auditYear || !auditLetter}
                             onClick={() => fetchPatients('audit', 1, '')}
                         >
-                            Consultar
+                            Generar Auditoría
                         </button>
                     </div>
                 </div>
@@ -226,54 +227,92 @@ const PatientsIndex = ({ onNavigate }) => {
                 <div className="alert alert-danger">{error}</div>
             ) : (
                 <>
+                    {activeTab === 'audit' && patients.length > 0 && (
+                        <div style={{ marginBottom: '10px', padding: '0 5px', color: '#64748b', fontWeight: '500', fontSize: '0.95rem' }}>
+                            Total de registros encontrados: <span style={{ color: '#3b82f6' }}>{patients.length}</span>
+                        </div>
+                    )}
                     <div className="table-responsive">
                         <table className="modern-table">
                             <thead>
-                                <tr>
-                                    <th>Nombre Completo</th>
-                                    <th>Teléfono</th>
-                                    <th>Edad</th>
-                                    <th>Acciones</th>
-                                </tr>
+                                {activeTab === 'audit' ? (
+                                    <tr>
+                                        <th style={{ width: '80px' }}>REF</th>
+                                        <th>Población (Nombre Completo)</th>
+                                        <th style={{ width: '120px' }}>Folio</th>
+                                        <th>Fecha de Venta</th>
+                                    </tr>
+                                ) : (
+                                    <tr>
+                                        <th>Nombre Completo</th>
+                                        <th>Teléfono</th>
+                                        <th>Edad</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                )}
                             </thead>
                             <tbody>
                                 {patients.length > 0 ? (
-                                    patients.map((patient) => (
-                                        <tr key={patient.id}>
-                                            <td style={{ fontWeight: '500' }}>
-                                                {`${patient.nombre} ${patient.apellidoPaterno || ''} ${patient.apellidoMaterno || ''}`.trim()}
-                                            </td>
-                                            <td>{formatPhoneNumber(patient.telefono) || '-'}</td>
-                                            <td>{patient.edad ? `${patient.edad} años` : '-'}</td>
-                                            <td>
-                                                <button
-                                                    className="btn-icon"
-                                                    style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}
-                                                    title="Ver Expediente"
-                                                    onClick={() => onNavigate('patient-details', { patientId: patient.id })}
-                                                >
-                                                    📂
-                                                </button>
-                                                <button
-                                                    className="btn-icon"
-                                                    style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}
-                                                    title="Nueva Consulta"
-                                                    onClick={() => onNavigate('consultation-create', { 
-                                                        patientId: patient.id, 
-                                                        patientName: `${patient.nombre} ${patient.apellidoPaterno || ''}` 
-                                                    })}
-                                                >
-                                                    ➕
-                                                </button>
-                                                <button className="btn-icon" style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => handleEdit(patient)} title="Editar Paciente">✏️</button>
-                                                <button className="btn-icon" style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => requestDelete(patient)} title="Eliminar Paciente">🗑️</button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    patients.map((item, index) => {
+                                        // item is PatientDto normally, but PatientAuditDto in 'audit' tab
+                                        if (activeTab === 'audit') {
+                                            const refNumber = String(index + 1).padStart(2, '0');
+                                            return (
+                                                <tr key={`${item.patientId}-${item.folioFisico}-${index}`}>
+                                                    <td style={{ color: '#64748b', fontWeight: '600' }}>
+                                                        A-{refNumber}
+                                                    </td>
+                                                    <td style={{ fontWeight: '500' }}>
+                                                        {item.nombreCompleto}
+                                                    </td>
+                                                    <td style={{ fontWeight: '600', color: '#1e293b' }}>
+                                                        {item.folioFisico}
+                                                    </td>
+                                                    <td style={{ fontSize: '0.9rem' }}>
+                                                        {formatDateLong(item.fechaVenta)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+                                        
+                                        // Standard tabs layout
+                                        return (
+                                            <tr key={item.id}>
+                                                <td style={{ fontWeight: '500' }}>
+                                                    {`${item.nombre} ${item.apellidoPaterno || ''} ${item.apellidoMaterno || ''}`.trim()}
+                                                </td>
+                                                <td>{formatPhoneNumber(item.telefono) || '-'}</td>
+                                                <td>{item.edad ? `${item.edad} años` : '-'}</td>
+                                                <td>
+                                                    <button
+                                                        className="btn-icon"
+                                                        style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}
+                                                        title="Ver Expediente"
+                                                        onClick={() => onNavigate('patient-details', { patientId: item.id })}
+                                                    >
+                                                        📂
+                                                    </button>
+                                                    <button
+                                                        className="btn-icon"
+                                                        style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}
+                                                        title="Nueva Consulta"
+                                                        onClick={() => onNavigate('consultation-create', { 
+                                                            patientId: item.id, 
+                                                            patientName: `${item.nombre} ${item.apellidoPaterno || ''}` 
+                                                        })}
+                                                    >
+                                                        ➕
+                                                    </button>
+                                                    <button className="btn-icon" style={{ marginRight: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => handleEdit(item)} title="Editar Paciente">✏️</button>
+                                                    <button className="btn-icon" style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={() => requestDelete(item)} title="Eliminar Paciente">🗑️</button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="empty-state">
-                                            {activeTab === 'search' && !searchTerm ? 'Ingrese un término para buscar.' : 'No se encontraron pacientes.'}
+                                        <td colSpan={activeTab === 'audit' ? 4 : 4} className="empty-state">
+                                            {activeTab === 'search' && !searchTerm ? 'Ingrese un término para buscar.' : 'No se encontraron registros.'}
                                         </td>
                                     </tr>
                                 )}

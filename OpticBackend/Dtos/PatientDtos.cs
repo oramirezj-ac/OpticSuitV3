@@ -43,4 +43,15 @@ namespace OpticBackend.Dtos
     {
         public bool EstaActivo { get; set; } = true;
     }
+
+    public class PatientAuditDto
+    {
+        public Guid PatientId { get; set; }
+        public string NombreCompleto { get; set; } = string.Empty;
+        public string? FolioFisico { get; set; }
+        public DateTime? FechaVenta { get; set; }
+        public string? ApellidoPaterno { get; set; }
+        public string? ApellidoMaterno { get; set; }
+        public string? Nombre { get; set; }
+    }
 }

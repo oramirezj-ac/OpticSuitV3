@@ -275,7 +275,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                                         checked={vendedoresSeleccionados.includes(v.id)}
                                         readOnly
                                     />
-                                    <span style={{ fontSize: '0.9rem' }}>{v.nombre} ({v.email})</span>
+                                    <span style={{ fontSize: '0.9rem' }}>{v.nombreCompleto || v.email}</span>
                                 </div>
                             ))}
                         </div>
@@ -288,7 +288,7 @@ const SaleCreate = ({ onNavigate, params }) => {
                                 const v = availableVendors.find(u => u.id === id);
                                 return (
                                     <div key={id} className="vendor-item">
-                                        <span>{v?.nombre}</span>
+                                        <span>{v?.nombreCompleto || v?.email}</span>
                                         <span className="commission-amount">{formatCurrency(commissionPerVendor)}</span>
                                     </div>
                                 );

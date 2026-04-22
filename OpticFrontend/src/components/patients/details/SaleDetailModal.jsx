@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import { formatCurrency } from '../../../utils/formatUtils';
 import { apiClient } from '../../../services/apiClient';
+import { getUsers } from '../../../services/userApi';
 import EditSaleModal from './EditSaleModal';
 import PaymentModal from './PaymentModal';
 
@@ -10,6 +11,13 @@ const SaleDetailModal = ({ sale, patientId, onClose, onSaleUpdated, onNavigate }
 
     // State for Payment Modal (if null, modal is closed; if {}, adding new; if {...} editing existing)
     const [selectedPayment, setSelectedPayment] = useState(null);
+    const [vendors, setVendors] = useState([]);
+
+    React.useEffect(() => {
+        if (sale?.comisiones?.length > 0) {
+            getUsers().then(v => setVendors(v || [])).catch(err => console.error(err));
+        }
+    }, [sale?.comisiones]);
 
     const handleDeletePayment = (paymentId) => {
         if (onNavigate) {
@@ -72,6 +80,21 @@ const SaleDetailModal = ({ sale, patientId, onClose, onSaleUpdated, onNavigate }
                         </div>
                     </div>
                 </div>
+
+                {sale.comisiones?.length > 0 && vendors.length > 0 && (
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-5 animate-fade-in">
+                        <h4 style={{ fontSize: '0.85em', color: '#4338ca', margin: '0 0 8px 0', textTransform: 'uppercase', fontWeight: 700 }}>Comisiones de Vendedores</h4>
+                        {sale.comisiones.map((c, i) => {
+                            const vendor = vendors.find(v => v.id === c.usuarioId);
+                            return (
+                                <div key={i} style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', padding: '4px 0', borderBottom: i < sale.comisiones.length - 1 ? '1px dashed #c7d2fe' : 'none' }}>
+                                    <span style={{ fontSize: '0.9em', color: '#312e81', fontWeight: 500 }}>👤 {vendor ? vendor.email : 'Vendedor Desconocido'}</span>
+                                    <span style={{ fontSize: '0.95em', color: '#4f46e5', fontWeight: 'bold' }}>{formatCurrency(c.montoComision)}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 <h4 style={{ fontSize: '1em', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px', marginTop: '20px' }}>Productos / Servicios</h4>
                 <table style={{ width: '100%', marginBottom: '20px', fontSize: '0.95em' }}>

@@ -18,5 +18,11 @@ namespace OpticBackend.Dtos.Sales
 
         [System.Text.Json.Serialization.JsonPropertyName("observacionesGenerales")]
         public string? ObservacionesGenerales { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("montoComisionTotal")]
+        public decimal? MontoComisionTotal { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("vendedoresIds")]
+        public System.Collections.Generic.List<string>? VendedoresIds { get; set; }
     }
 }

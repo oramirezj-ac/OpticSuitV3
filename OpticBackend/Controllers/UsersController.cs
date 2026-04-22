@@ -79,7 +79,7 @@ namespace OpticBackend.Controllers
 
             if (!canManage)
             {
-                return Forbid("No tienes permisos para crear usuarios.");
+                return StatusCode(403, new { message = "No tienes permisos para crear usuarios." });
             }
 
             // Determinar el esquema objetivo usando el servicio
@@ -139,7 +139,7 @@ namespace OpticBackend.Controllers
             // ⚠️ SEGURIDAD: Validar permisos usando el servicio centralizado
             if (!await _authorizationService.CanModifyUserAsync(currentUser.Id, id))
             {
-                return Forbid("No tienes permisos para modificar este usuario.");
+                return StatusCode(403, new { message = "No tienes permisos para modificar este usuario." });
             }
 
             // Actualizar campos
@@ -213,7 +213,7 @@ namespace OpticBackend.Controllers
                 // ⚠️ SEGURIDAD: Validar permisos usando el servicio centralizado
                 if (!await _authorizationService.CanModifyUserAsync(currentUser.Id, id))
                 {
-                    return Forbid("No tienes permisos para eliminar este usuario.");
+                    return StatusCode(403, new { message = "No tienes permisos para eliminar este usuario." });
                 }
 
                 var result = await _userManager.DeleteAsync(userToDelete);
