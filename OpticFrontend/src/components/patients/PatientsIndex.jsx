@@ -238,8 +238,8 @@ const PatientsIndex = ({ onNavigate }) => {
                                 {activeTab === 'audit' ? (
                                     <tr>
                                         <th style={{ width: '80px' }}>REF</th>
-                                        <th>Población (Nombre Completo)</th>
                                         <th style={{ width: '120px' }}>Folio</th>
+                                        <th>Población (Nombre Completo)</th>
                                         <th>Fecha de Venta</th>
                                     </tr>
                                 ) : (
@@ -262,11 +262,11 @@ const PatientsIndex = ({ onNavigate }) => {
                                                     <td style={{ color: '#64748b', fontWeight: '600' }}>
                                                         A-{refNumber}
                                                     </td>
-                                                    <td style={{ fontWeight: '500' }}>
-                                                        {item.nombreCompleto}
-                                                    </td>
                                                     <td style={{ fontWeight: '600', color: '#1e293b' }}>
                                                         {item.folioFisico}
+                                                    </td>
+                                                    <td style={{ fontWeight: '500' }}>
+                                                        {item.nombreCompleto}
                                                     </td>
                                                     <td style={{ fontSize: '0.9rem' }}>
                                                         {formatDateLong(item.fechaVenta)}
