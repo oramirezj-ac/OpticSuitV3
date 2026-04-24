@@ -99,6 +99,16 @@ const PaymentManagement = ({ onNavigate, params }) => {
                         <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{sale.folioFisico?.split('-D')[0] || 'N/A'}</div>
                     </div>
                     <div>
+                        <strong style={{ color: '#64748b', fontSize: '0.9em' }}>PACIENTE:</strong>
+                        <div style={{ fontWeight: 'bold', color: '#1e293b' }}>
+                            {sale.paciente 
+                                ? `${sale.paciente.nombre} ${sale.paciente.apellidoPaterno || ''} ${sale.paciente.apellidoMaterno || ''}` 
+                                : (sale.consulta?.paciente 
+                                    ? `${sale.consulta.paciente.nombre} ${sale.consulta.paciente.apellidoPaterno || ''}` 
+                                    : 'Venta Directa / Mostrador')}
+                        </div>
+                    </div>
+                    <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FECHA:</strong>
                         <div>{formatDateLong(sale.fecha)}</div>
                     </div>

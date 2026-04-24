@@ -184,6 +184,9 @@ namespace OpticBackend.Services
         public async Task<Sale?> GetSaleByIdAsync(Guid id)
         {
             return await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
                 .Include(v => v.Detalles)
                 .Include(v => v.Abonos)
                 .Include(v => v.Comisiones)
@@ -349,6 +352,7 @@ namespace OpticBackend.Services
         public async Task<IEnumerable<Sale>> GetSalesByYearAsync(int year)
         {
             var sales = await _context.Ventas
+                .Include(v => v.Paciente)
                 .Include(v => v.Consulta)
                 .ThenInclude(c => c.Paciente)
                 .Where(v => v.Fecha.HasValue && v.Fecha.Value.Year == year)
@@ -373,6 +377,7 @@ namespace OpticBackend.Services
         public async Task<IEnumerable<Sale>> GetCounterSalesAsync()
         {
             return await _context.Ventas
+                .Include(v => v.Paciente)
                 .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
                 .ToListAsync();
         }
