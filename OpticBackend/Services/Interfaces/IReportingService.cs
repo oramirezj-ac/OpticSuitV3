@@ -7,5 +7,6 @@ namespace OpticBackend.Services.Interfaces
     {
         Task<AdminSummaryDto> GetAdminSummaryAsync();
         Task<SellerSummaryDto> GetSellerSummaryAsync(string userId);
+        Task<List<TenantSummaryDto>> GetRootCrossTenantSummaryAsync();
     }
 }

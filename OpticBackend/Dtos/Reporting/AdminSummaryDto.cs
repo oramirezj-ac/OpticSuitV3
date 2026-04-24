@@ -30,4 +30,13 @@ namespace OpticBackend.Dtos.Reporting
         public int ArmazonesMarcaAnio { get; set; }
         public decimal ComisionesMesActual { get; set; }
     }
+
+    public class TenantSummaryDto
+    {
+        public string Schema { get; set; } = string.Empty;
+        public string NombreOptica { get; set; } = string.Empty;
+        public decimal TotalGlobal { get; set; }
+        public List<YearSummaryDto> VentasLentes { get; set; } = new();
+        public List<YearSummaryDto> VentasMedicas { get; set; } = new();
+    }
 }

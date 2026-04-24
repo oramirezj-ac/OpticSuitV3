@@ -56,5 +56,21 @@ namespace OpticBackend.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        [HttpGet("root-summary")]
+        [Authorize(Roles = "Root")]
+        public async Task<ActionResult> GetRootSummary()
+        {
+            try
+            {
+                var summary = await _reportingService.GetRootCrossTenantSummaryAsync();
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching root cross-tenant summary");
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }
