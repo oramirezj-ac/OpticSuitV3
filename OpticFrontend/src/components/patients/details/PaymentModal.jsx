@@ -7,7 +7,7 @@ const PaymentModal = ({ sale, payment, onClose, onSuccess }) => {
 
     const [form, setForm] = useState({
         monto: payment?.monto || 0,
-        fechaPago: payment?.fechaPago ? payment.fechaPago.split('T')[0] : new Date().toISOString().split('T')[0],
+        fechaPago: payment?.fechaPago ? payment.fechaPago.split('T')[0] : (sale?.fecha ? sale.fecha.split('T')[0] : new Date().toISOString().split('T')[0]),
         metodoPago: payment?.metodoPago || 'Efectivo'
     });
 

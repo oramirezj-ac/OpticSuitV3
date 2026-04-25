@@ -9,7 +9,7 @@ import './SalesIndex.css';
 const SaleCreate = ({ onNavigate, params }) => {
     // Basic Info
     const [folioFisico, setFolioFisico] = useState('');
-    const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
+    const [saleDate, setSaleDate] = useState(params?.defaultDate || new Date().toISOString().split('T')[0]);
     const [totalVenta, setTotalVenta] = useState(params?.totalAmount || '');
     const [observaciones, setObservaciones] = useState('');
     

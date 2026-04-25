@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import GraduationCard from '../../common/GraduationCard';
 
-const ConsultationHistory = ({ type, patientId, consultations, loading, onNavigate, onCheckout, onDelete }) => {
+const ConsultationHistory = ({ type, patientId, consultations, loading, onNavigate, onCheckout, onDelete, onCreateConsultation }) => {
     return (
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
@@ -11,7 +11,7 @@ const ConsultationHistory = ({ type, patientId, consultations, loading, onNaviga
                 </h4>
                 <button
                     className="btn btn-primary text-sm"
-                    onClick={() => onNavigate && onNavigate('consultation-create', { patientId })}
+                    onClick={() => onCreateConsultation && onCreateConsultation()}
                 >
                     + Nueva Consulta
                 </button>
@@ -21,7 +21,7 @@ const ConsultationHistory = ({ type, patientId, consultations, loading, onNaviga
                 consultations.length === 0 ? (
                     <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 border-dashed">
                         <p className="text-muted mb-2">No hay consultas registradas para este paciente.</p>
-                        <button className="btn btn-ghost text-sm" onClick={() => onNavigate && onNavigate('consultation-create', { patientId })}>
+                        <button className="btn btn-ghost text-sm" onClick={() => onCreateConsultation && onCreateConsultation()}>
                             Registrar la primera ahora
                         </button>
                     </div>
@@ -56,19 +56,24 @@ const ConsultationHistory = ({ type, patientId, consultations, loading, onNaviga
                                                 {type === 'medical' && <div className="text-xs text-blue-500 italic">Diag: {diag}</div>}
                                             </td>
                                             <td className="p-3">
-                                                {c.graduaciones && c.graduaciones.length > 0 ? (
-                                                    <div className="flex flex-col gap-4">
-                                                        {c.graduaciones.map((g) => (
-                                                            <GraduationCard 
-                                                                key={g.id} 
-                                                                graduation={g} 
-                                                                title={g.tipoGraduacion || 'Lectura'}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-slate-300 italic text-xs">Sin graduaciones</span>
-                                                )}
+                                                {(() => {
+                                                    const finalGrads = (c.graduaciones || []).filter(g => 
+                                                        (g.tipoGraduacion || '').toLowerCase() === 'final'
+                                                    );
+                                                    return finalGrads.length > 0 ? (
+                                                        <div className="flex flex-col gap-4">
+                                                            {finalGrads.map((g) => (
+                                                                <GraduationCard 
+                                                                    key={g.id} 
+                                                                    graduation={g} 
+                                                                    title="Final"
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300 italic text-xs">Sin graduación final</span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="p-3 text-right">
                                                 <div className="flex justify-end gap-2">

@@ -216,7 +216,7 @@ const ConsultationGraduations = ({ onNavigate, params }) => {
                         <button
                             className="btn-primary"
                             style={{ background: '#10b981' }}
-                            onClick={() => onNavigate('sales-create', { patientId, consultationId })}
+                            onClick={() => onNavigate('sales-create', { patientId, consultationId, defaultDate: consultation?.fecha ? consultation.fecha.split('T')[0] : '' })}
                         >
                             💰 Generar Venta
                         </button>

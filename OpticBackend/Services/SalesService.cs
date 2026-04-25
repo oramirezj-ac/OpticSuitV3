@@ -154,16 +154,33 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 6. Update parent items modification dates
+                // 6. Update parent items modification dates + auto-update FechaRegistro if sale is older
+                Guid? resolvedPacienteId = sale.PacienteId;
+
                 if (sale.ConsultaId.HasValue)
                 {
                     var consultaRef = await _context.Consultas.FindAsync(sale.ConsultaId.Value);
                     if (consultaRef != null) 
                     {
                         consultaRef.FechaActualizacion = DateTime.UtcNow;
-                        var pacienteRef = await _context.Pacientes.FindAsync(consultaRef.PacienteId);
-                        if (pacienteRef != null) {
-                            pacienteRef.FechaActualizacion = DateTime.UtcNow;
+                        resolvedPacienteId ??= consultaRef.PacienteId;
+                    }
+                }
+
+                if (resolvedPacienteId.HasValue)
+                {
+                    var pacienteRef = await _context.Pacientes.FindAsync(resolvedPacienteId.Value);
+                    if (pacienteRef != null)
+                    {
+                        pacienteRef.FechaActualizacion = DateTime.UtcNow;
+
+                        // Auto-update FechaRegistro if sale date is older
+                        if (sale.Fecha.HasValue && sale.Fecha.Value < pacienteRef.FechaRegistro)
+                        {
+                            _logger.LogInformation(
+                                "📅 [SalesService] Updating FechaRegistro for patient {Id}: {Old} → {New}",
+                                pacienteRef.Id, pacienteRef.FechaRegistro, sale.Fecha.Value);
+                            pacienteRef.FechaRegistro = sale.Fecha.Value;
                         }
                     }
                 }

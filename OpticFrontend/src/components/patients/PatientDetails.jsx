@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { usePatientData } from '../../hooks/usePatientData';
+import { formatDateForInput } from '../../utils/dateUtils';
 import SaleDetailModal from './details/SaleDetailModal';
 import PatientHeader from './details/PatientHeader';
 import PatientSummary from './details/PatientSummary';
 import ConsultationHistory from './details/ConsultationHistory';
 import SalesHistory from './details/SalesHistory';
 import MedicalCheckoutModal from './details/MedicalCheckoutModal';
+import ConsultationCreateModal from './details/ConsultationCreateModal';
 import './PatientDetails.css';
 
 const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
@@ -25,12 +27,28 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
     // Estado local para UI (Modal)
     const [selectedSale, setSelectedSale] = useState(null);
     const [checkoutConsultation, setCheckoutConsultation] = useState(null);
+    const [consultationCreateType, setConsultationCreateType] = useState(null); // null = closed, 'consulta_lentes' or 'consulta_medica'
 
     const handleCheckoutSuccess = () => {
         setCheckoutConsultation(null);
         setActiveTab('sales');
         refreshData();
     };
+
+    const handleConsultationSuccess = () => {
+        setConsultationCreateType(null);
+        refreshData();
+    };
+
+    const handleNavigateGraduations = (consultationId) => {
+        setConsultationCreateType(null);
+        onNavigate('consultation-graduations', {
+            consultationId,
+            patientId
+        });
+    };
+
+    const patientFullName = patient ? `${patient.nombre} ${patient.apellidoPaterno || ''} ${patient.apellidoMaterno || ''}`.trim() : '';
 
     const handleSaleUpdated = (updatedSale) => {
         setSelectedSale(updatedSale);
@@ -100,6 +118,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                         loading={loadingTab}
                         onNavigate={onNavigate}
                         onDelete={handleDeleteConsultation}
+                        onCreateConsultation={() => setConsultationCreateType('consulta_lentes')}
                     />
                 )}
 
@@ -112,6 +131,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                         onNavigate={onNavigate}
                         onCheckout={setCheckoutConsultation}
                         onDelete={handleDeleteConsultation}
+                        onCreateConsultation={() => setConsultationCreateType('consulta_medica')}
                     />
                 )}
 
@@ -123,6 +143,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                         onNavigate={onNavigate}
                         onSelectSale={setSelectedSale}
                         onDeleteSale={handleDeleteSale}
+                        defaultDate={patient ? formatDateForInput(patient.fechaRegistro) : ''}
                     />
                 )}
             </div>
@@ -143,6 +164,19 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                     patientId={patientId}
                     onClose={() => setCheckoutConsultation(null)}
                     onSuccess={handleCheckoutSuccess}
+                />
+            )}
+
+            {/* CONSULTATION CREATE MODAL */}
+            {consultationCreateType && (
+                <ConsultationCreateModal
+                    patientId={patientId}
+                    patientName={patientFullName}
+                    tipoConsulta={consultationCreateType}
+                    defaultDate={patient ? formatDateForInput(patient.fechaRegistro) : ''}
+                    onClose={() => setConsultationCreateType(null)}
+                    onSuccess={handleConsultationSuccess}
+                    onNavigateGraduations={handleNavigateGraduations}
                 />
             )}
         </div>

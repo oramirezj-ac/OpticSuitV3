@@ -288,17 +288,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                         </div>
 
                         <div className="form-row">
-                            <div className="form-group col" style={colStyle}>
-                                <label>Teléfono</label>
-                                <input
-                                    type="text"
-                                    name="telefono"
-                                    className="form-input"
-                                    value={formData.telefono}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div className="form-group col" style={colStyle}>
+                            <div className="form-group col" style={{ ...colStyle, flex: 2 }}>
                                 <label>Dirección</label>
                                 <input
                                     type="text"
@@ -308,10 +298,20 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                                     onChange={handleChange}
                                 />
                             </div>
+                            <div className="form-group col" style={{ ...colStyle, flex: 1 }}>
+                                <label>Teléfono</label>
+                                <input
+                                    type="text"
+                                    name="telefono"
+                                    className="form-input"
+                                    value={formData.telefono}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
 
                         <div className="form-row">
-                            <div className="form-group col" style={colStyle}>
+                            <div className="form-group col" style={{ ...colStyle, flex: 1 }}>
                                 <label>Ocupación</label>
                                 <input
                                     type="text"
@@ -321,7 +321,7 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                                     onChange={handleChange}
                                 />
                             </div>
-                            <div className="form-group col" style={colStyle}>
+                            <div className="form-group col" style={{ ...colStyle, flex: 1 }}>
                                 <label>Email</label>
                                 <input
                                     type="email"
@@ -331,11 +331,8 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                                     onChange={handleChange}
                                 />
                             </div>
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group col" style={{ ...colStyle, maxWidth: '200px' }}>
-                                <label>Fecha Registro (Histórica)</label>
+                            <div className="form-group col" style={{ ...colStyle, flex: 1 }}>
+                                <label>Fecha Registro</label>
                                 <input
                                     type="date"
                                     name="fechaRegistro"

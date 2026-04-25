@@ -60,7 +60,7 @@ const ConsultationCreate = ({ onNavigate, params }) => {
         if (!form.motivoConsulta) {
             setForm(prev => ({
                 ...prev,
-                motivoConsulta: tipoConsulta === 'consulta_lentes' ? 'Refracción' : 'Revisión Médica'
+                motivoConsulta: tipoConsulta === 'consulta_lentes' ? 'Revisar graduación' : 'Revisión Médica'
             }));
         }
     }, [tipoConsulta]);
