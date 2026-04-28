@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OpticBackend.Data;
 using OpticBackend.Models;
 using OpticBackend.Services.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace OpticBackend.Services
 {
@@ -35,23 +36,27 @@ namespace OpticBackend.Services
                 query = query.Where(p => p.Id != excludeId.Value);
             }
 
-            // Normalizar valores para comparación case-insensitive
-            var normalizedName = nombre.Trim().ToLower();
-            var normalizedPaterno = apellidoPaterno?.Trim().ToLower();
-            var normalizedMaterno = apellidoMaterno?.Trim().ToLower();
+            var patternNombre = BuildAccentInsensitiveRegex(nombre.Trim());
+            var patternPaterno = string.IsNullOrWhiteSpace(apellidoPaterno) ? null : BuildAccentInsensitiveRegex(apellidoPaterno.Trim());
+            var patternMaterno = string.IsNullOrWhiteSpace(apellidoMaterno) ? null : BuildAccentInsensitiveRegex(apellidoMaterno.Trim());
             var normalizedPhone = telefono?.Trim();
 
             // Buscar duplicados por:
-            // 1. Nombre completo exacto (Nombre + Apellido Paterno + Apellido Materno)
+            // 1. Nombre completo similar (ignorando acentos y mayúsculas, y flexibilizando los apellidos)
             // 2. Teléfono (si se proporcionó y tiene longitud válida)
             var duplicates = await query.Where(p =>
-                // Caso 1: Coincidencia de nombre completo
+                // Caso 1: Coincidencia de nombre completo similar
                 (
-                    p.Nombre.ToLower() == normalizedName &&
-                    p.ApellidoPaterno != null && normalizedPaterno != null && p.ApellidoPaterno.ToLower() == normalizedPaterno &&
+                    Regex.IsMatch(p.Nombre, patternNombre, RegexOptions.IgnoreCase) &&
                     (
-                        (p.ApellidoMaterno == null && normalizedMaterno == null) ||
-                        (p.ApellidoMaterno != null && normalizedMaterno != null && p.ApellidoMaterno.ToLower() == normalizedMaterno)
+                        patternPaterno == null || 
+                        p.ApellidoPaterno == null || p.ApellidoPaterno == "" ||
+                        Regex.IsMatch(p.ApellidoPaterno, patternPaterno, RegexOptions.IgnoreCase)
+                    ) &&
+                    (
+                        patternMaterno == null || 
+                        p.ApellidoMaterno == null || p.ApellidoMaterno == "" ||
+                        Regex.IsMatch(p.ApellidoMaterno, patternMaterno, RegexOptions.IgnoreCase)
                     )
                 )
                 ||
@@ -63,6 +68,27 @@ namespace OpticBackend.Services
             .ToListAsync();
 
             return duplicates;
+        }
+
+        private string BuildAccentInsensitiveRegex(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            // Escape special regex characters in the input
+            string escapedInput = Regex.Escape(input);
+            
+            // Remove backslashes before spaces so PostgreSQL doesn't get confused
+            escapedInput = escapedInput.Replace("\\ ", " ");
+
+            // Replace vowels (both accented and unaccented) with regex groups
+            escapedInput = Regex.Replace(escapedInput, "[aáäAÁÄ]", "[aáäAÁÄ]");
+            escapedInput = Regex.Replace(escapedInput, "[eéëEÉË]", "[eéëEÉË]");
+            escapedInput = Regex.Replace(escapedInput, "[iíïIÍÏ]", "[iíïIÍÏ]");
+            escapedInput = Regex.Replace(escapedInput, "[oóöOÓÖ]", "[oóöOÓÖ]");
+            escapedInput = Regex.Replace(escapedInput, "[uúüUÚÜ]", "[uúüUÚÜ]");
+
+            // Allow optional trailing/leading spaces gracefully
+            return "^\\s*" + escapedInput + "\\s*$";
         }
     }
 }

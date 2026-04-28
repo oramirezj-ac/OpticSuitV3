@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { deletePatient } from '../../services/patientApi';
+import { authService } from '../../services/authService';
 import DeleteConfirmation from '../common/DeleteConfirmation';
 
 const PatientDelete = ({ patientId, patientName, onBack, onSuccess, onNavigate }) => {
@@ -36,9 +37,7 @@ const PatientDelete = ({ patientId, patientName, onBack, onSuccess, onNavigate }
             onSuccess();
         } catch (err) {
             console.error(err);
-            // setError is not defined in this component, it seems it relied on local state or parent.
-            // Wait, I saw setError in my previous attempt but it's not here.
-            alert(err.message);
+            throw err;
         }
     };
 

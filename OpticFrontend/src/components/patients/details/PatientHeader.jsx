@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
 import { formatPhoneNumber } from '../../../utils/formatUtils';
 
-const PatientHeader = ({ patient, onBack }) => {
+const PatientHeader = ({ patient, onBack, onEdit }) => {
     const isPresbyopicRisk = patient.edad && patient.edad >= 40;
 
     return (
@@ -17,6 +17,7 @@ const PatientHeader = ({ patient, onBack }) => {
                         <span className={`badge-status ${patient.estaActivo ? 'active' : 'inactive'}`}>
                             {patient.estaActivo ? 'Activo' : 'Inactivo'}
                         </span>
+                        <button className="btn-icon" style={{ marginLeft: '8px', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }} onClick={onEdit} title="Editar Paciente">✏️</button>
                     </div>
                 </div>
             </div>

@@ -8,7 +8,7 @@ const PaymentDelete = ({ saleId, paymentId, onBack, onSuccess }) => {
             await apiClient.delete(`/api/sales/${saleId}/payments/${paymentId}`);
             onSuccess();
         } catch (err) {
-            alert(err.message || "Fallo al eliminar abono.");
+            throw err;
         }
     };
 

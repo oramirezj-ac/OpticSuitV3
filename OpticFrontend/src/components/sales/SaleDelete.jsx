@@ -14,7 +14,6 @@ const SaleDelete = ({ saleId, onBack, onSuccess }) => {
                 onSuccess();
             }, 1500);
         } catch (err) {
-            alert(err.message || "Fallo al eliminar venta.");
             throw err; // Important: re-throw so DeleteConfirmation knows it failed
         }
     };

@@ -8,6 +8,7 @@ import ConsultationHistory from './details/ConsultationHistory';
 import SalesHistory from './details/SalesHistory';
 import MedicalCheckoutModal from './details/MedicalCheckoutModal';
 import ConsultationCreateModal from './details/ConsultationCreateModal';
+import PatientForm from './PatientForm';
 import './PatientDetails.css';
 
 const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
@@ -28,6 +29,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
     const [selectedSale, setSelectedSale] = useState(null);
     const [checkoutConsultation, setCheckoutConsultation] = useState(null);
     const [consultationCreateType, setConsultationCreateType] = useState(null); // null = closed, 'consulta_lentes' or 'consulta_medica'
+    const [isEditing, setIsEditing] = useState(false);
 
     const handleCheckoutSuccess = () => {
         setCheckoutConsultation(null);
@@ -74,7 +76,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
     return (
         <div className="patient-details-container">
             {/* Header / Expediente Info */}
-            <PatientHeader patient={patient} onBack={onBack} />
+            <PatientHeader patient={patient} onBack={onBack} onEdit={() => setIsEditing(true)} />
 
             {/* Tabs Navigation */}
             <div className="details-tabs">
@@ -177,6 +179,18 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                     onClose={() => setConsultationCreateType(null)}
                     onSuccess={handleConsultationSuccess}
                     onNavigateGraduations={handleNavigateGraduations}
+                />
+            )}
+
+            {/* EDIT PATIENT MODAL */}
+            {isEditing && (
+                <PatientForm
+                    patient={patient}
+                    onClose={() => setIsEditing(false)}
+                    onSuccess={() => {
+                        setIsEditing(false);
+                        refreshData();
+                    }}
                 />
             )}
         </div>

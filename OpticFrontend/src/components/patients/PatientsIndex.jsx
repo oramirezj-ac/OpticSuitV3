@@ -348,6 +348,7 @@ const PatientsIndex = ({ onNavigate }) => {
                     patient={selectedPatient}
                     onClose={() => setShowModal(false)}
                     onSuccess={handleModalSuccess}
+                    onNavigate={onNavigate}
                 />
             )}
         </div>

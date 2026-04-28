@@ -97,7 +97,10 @@ const ConsultationCreate = ({ onNavigate, params }) => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!selectedPatient) return alert("Por favor seleccione un paciente");
+        if (!selectedPatient) {
+            setError("Por favor seleccione un paciente");
+            return;
+        }
 
         setLoading(true);
         setError(null);

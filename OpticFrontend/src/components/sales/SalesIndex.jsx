@@ -120,7 +120,7 @@ const SalesIndex = ({ onNavigate }) => {
             setShowCounterModal(false);
             if (activeTab === 'mostrador') fetchCounterSales();
         } catch (err) {
-            alert("Error al registrar venta: " + err.message);
+            setError("Error al registrar venta: " + err.message);
         } finally {
             setModalLoading(false);
         }
@@ -141,7 +141,7 @@ const SalesIndex = ({ onNavigate }) => {
             setShowCancelModal(false);
             if (activeTab === 'notas') fetchSalesByYear(selectedYear);
         } catch (err) {
-            alert("Error al registrar folio: " + err.message);
+            setError("Error al registrar folio: " + err.message);
         } finally {
             setModalLoading(false);
         }

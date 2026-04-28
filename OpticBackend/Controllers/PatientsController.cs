@@ -367,13 +367,14 @@ namespace OpticBackend.Controllers
                 }
 
                 var consultasCount = await _context.Consultas.CountAsync(c => c.PacienteId == id);
-                var ventasCount = await _context.DetalleVentas.CountAsync(d => d.PacienteId == id);
+                var detalleVentasCount = await _context.DetalleVentas.CountAsync(d => d.PacienteId == id);
+                var ventasCount = await _context.Ventas.CountAsync(v => v.PacienteId == id);
 
-                if (consultasCount > 0 || ventasCount > 0)
+                if (consultasCount > 0 || detalleVentasCount > 0 || ventasCount > 0)
                 {
                     return Conflict(new { 
                         message = "No se puede eliminar porque existen registros en su expediente.",
-                        counts = new { consultas = consultasCount, ventas = ventasCount }
+                        counts = new { consultas = consultasCount, detalleVentas = detalleVentasCount, ventas = ventasCount }
                     });
                 }
 

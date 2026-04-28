@@ -5,7 +5,7 @@ import SuccessOverlay from '../common/SuccessOverlay';
 import { calculateAgeFromDate, calculateDateFromAge, formatDateForInput } from '../../utils/dateUtils';
 import { checkDuplicates, createPatient, updatePatient } from '../../services/patientApi';
 
-const PatientForm = ({ patient, onClose, onSuccess }) => {
+const PatientForm = ({ patient, onClose, onSuccess, onNavigate }) => {
     const [formData, setFormData] = useState({
         nombre: '',
         apellidoPaterno: '',
@@ -138,6 +138,11 @@ const PatientForm = ({ patient, onClose, onSuccess }) => {
                     // Trigger success to refresh lists if needed
                     if (onSuccess) onSuccess();
                 }
+            }
+
+            // Navigate to the existing patient's details
+            if (onNavigate) {
+                onNavigate('patient-details', { patientId: existingPatient.id });
             }
         } catch (e) {
             console.error("Error updating patient date on duplicate select", e);
