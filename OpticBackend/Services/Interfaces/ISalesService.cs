@@ -14,6 +14,8 @@ namespace OpticBackend.Services.Interfaces
         Task<IEnumerable<Sale>> SearchSalesByFolioAsync(string folio);
         Task<IEnumerable<int>> GetSalesYearsAsync();
         Task<IEnumerable<Sale>> GetSalesByYearAsync(int year);
+        Task<IEnumerable<Sale>> GetDescendingSalesAsync();
+        Task<IEnumerable<Sale>> GetSalesByRangeAsync(string startFolio, string endFolio);
         Task<IEnumerable<Sale>> GetCounterSalesAsync();
         Task<IEnumerable<Sale>> GetConsultationSalesAsync();
         Task<Sale?> CreateCounterSaleAsync(string concept, decimal amount, DateTime date, string userId);

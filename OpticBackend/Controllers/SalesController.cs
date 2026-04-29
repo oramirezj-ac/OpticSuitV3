@@ -52,6 +52,22 @@ namespace OpticBackend.Controllers
             return Ok(await _salesService.GetSalesByYearAsync(year));
         }
 
+        [HttpGet("descending")]
+        public async Task<ActionResult<IEnumerable<Sale>>> GetDescendingSales()
+        {
+            return Ok(await _salesService.GetDescendingSalesAsync());
+        }
+
+        [HttpGet("range")]
+        public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByRange([FromQuery] string start, [FromQuery] string end)
+        {
+            if (string.IsNullOrEmpty(start) || string.IsNullOrEmpty(end))
+            {
+                return BadRequest(new { message = "Se requieren los folios de inicio y fin" });
+            }
+            return Ok(await _salesService.GetSalesByRangeAsync(start, end));
+        }
+
         [HttpGet("counter")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetCounterSales()
         {

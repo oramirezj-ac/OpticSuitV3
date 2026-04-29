@@ -391,6 +391,56 @@ namespace OpticBackend.Services
             });
         }
 
+        public async Task<IEnumerable<Sale>> GetDescendingSalesAsync()
+        {
+            var sales = await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .ToListAsync();
+
+            // Filtrado manual: Solo notas físicas
+            var filteredSales = sales.Where(v => {
+                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
+                string folio = v.FolioFisico.ToUpper().Trim();
+                return !(folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-"));
+            }).ToList();
+
+            return filteredSales.OrderByDescending(v => {
+                var baseFolio = v.FolioFisico.Split("-D")[0];
+                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
+            });
+        }
+
+        public async Task<IEnumerable<Sale>> GetSalesByRangeAsync(string startFolio, string endFolio)
+        {
+            var sales = await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .ToListAsync();
+
+            // Rellenamos a 4 dígitos para comparaciones léxicas robustas de texto numérico
+            string startPadded = (startFolio ?? "").PadLeft(4, '0');
+            string endPadded = (endFolio ?? "").PadLeft(4, '0');
+
+            var filteredSales = sales.Where(v => {
+                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
+                string folio = v.FolioFisico.ToUpper().Trim();
+                if (folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-")) return false;
+
+                var baseFolio = folio.Split("-D")[0].PadLeft(4, '0');
+                
+                // Compare strings lexically since they are padded
+                return string.Compare(baseFolio, startPadded) >= 0 && string.Compare(baseFolio, endPadded) <= 0;
+            }).ToList();
+
+            return filteredSales.OrderByDescending(v => {
+                var baseFolio = v.FolioFisico.Split("-D")[0];
+                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
+            });
+        }
+
         public async Task<IEnumerable<Sale>> GetCounterSalesAsync()
         {
             return await _context.Ventas

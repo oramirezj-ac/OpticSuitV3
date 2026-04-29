@@ -1,109 +1,87 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
-using MySqlConnector;
 using Npgsql;
 
 namespace MigrationTool
 {
     class Program
     {
-        static readonly string MariaDbBaseConn = "Server=host.docker.internal;Port=3306;User ID=root;Password=omar;Allow User Variables=True;";
         static readonly string PostgresBaseConn = "Host=db;Port=5432;Username=postgres;Password=optic_pass;Database=opticsuit;";
 
         static async Task Main(string[] args)
         {
             Console.WriteLine("=================================================");
-            Console.WriteLine(" RESTAURANDO VENTAS ELIMINADAS POR ERROR DE FOLIO");
+            Console.WriteLine(" INICIANDO LIMPIEZA DE NOTAS CON ERRORES ORTOGRAFICOS");
             Console.WriteLine("=================================================");
 
-            var configuraciones = new[]
-            {
-                new { MariaDB = "db_galileo_v2", Schema = "galileo" },
-                new { MariaDB = "db_san_gabriel_v2", Schema = "sangabriel" }
-            };
+            string[] esquemas = new[] { "galileo", "sangabriel" };
 
-            foreach (var config in configuraciones)
+            foreach (var esquema in esquemas)
             {
-                Console.WriteLine($"\n[>>>] Restaurando en esquema: {config.Schema} desde {config.MariaDB}...");
-                string mariaConnStr = $"{MariaDbBaseConn}Database={config.MariaDB};";
-                string pgConnStr = $"{PostgresBaseConn}SearchPath={config.Schema};";
+                Console.WriteLine($"\n[>>>] Limpiando notas duplicadas en: {esquema}...");
+                string pgConnStr = $"{PostgresBaseConn}SearchPath={esquema};";
 
                 try
                 {
-                    using var mariaConn = new MySqlConnection(mariaConnStr);
                     using var pgConn = new NpgsqlConnection(pgConnStr);
-
-                    await mariaConn.OpenAsync();
                     await pgConn.OpenAsync();
 
-                    // 1. Construir mapa de pacientes
-                    var pgPacientes = await pgConn.QueryAsync<dynamic>("SELECT id, nombre, apellido_paterno FROM pacientes");
-                    var pgPacMap = new Dictionary<string, Guid>();
-                    foreach (var p in pgPacientes)
-                    {
-                        string key = $"{p.nombre?.ToString().Trim()}_{p.apellido_paterno?.ToString().Trim()}".ToLower();
-                        pgPacMap[key] = p.id;
-                    }
+                    // Lógica robusta de limpieza de clones ortográficos
+                    var sqlLimpieza = @"
+                        -- 1. Identificar ventas clonadas y sus pacientes
+                        CREATE TEMP TABLE clones AS
+                        SELECT id as venta_id, paciente_id
+                        FROM (
+                            SELECT id, paciente_id, ROW_NUMBER() OVER (PARTITION BY folio_fisico, fecha::date ORDER BY id ASC) as rn
+                            FROM ventas
+                            WHERE folio_fisico IS NOT NULL AND folio_fisico != ''
+                        ) t WHERE t.rn > 1;
 
-                    var mariaPacientes = await mariaConn.QueryAsync<dynamic>("SELECT id, nombre, apellido_paterno FROM pacientes");
-                    var mariaToPgMap = new Dictionary<int, Guid>();
-                    foreach (var mp in mariaPacientes)
-                    {
-                        string key = $"{mp.nombre?.ToString().Trim()}_{mp.apellido_paterno?.ToString().Trim()}".ToLower();
-                        if (pgPacMap.TryGetValue(key, out Guid pgId))
-                        {
-                            mariaToPgMap[mp.id] = pgId;
-                        }
-                    }
+                        -- 2. Borrar abonos y ventas clonadas
+                        DELETE FROM abonos WHERE venta_id IN (SELECT venta_id FROM clones);
+                        DELETE FROM ventas WHERE id IN (SELECT venta_id FROM clones);
 
-                    // 2. Restaurar Ventas faltantes
-                    var ventasV2 = await mariaConn.QueryAsync<dynamic>("SELECT * FROM ventas");
-                    int restauradas = 0;
+                        -- 3. Identificar pacientes que se quedaron sin ventas (fantasmas por error ortográfico)
+                        CREATE TEMP TABLE pacientes_fantasma AS
+                        SELECT c.paciente_id
+                        FROM clones c
+                        LEFT JOIN ventas v ON c.paciente_id = v.paciente_id
+                        WHERE v.id IS NULL;
 
-                    foreach (var v in ventasV2)
-                    {
-                        Guid pId = v.id_paciente != null && mariaToPgMap.ContainsKey(v.id_paciente) ? mariaToPgMap[v.id_paciente] : Guid.Empty;
-                        if (pId == Guid.Empty) continue;
+                        -- 4. Borrar historial clínico de los fantasmas (graduaciones y consultas)
+                        DELETE FROM graduaciones WHERE consulta_id IN (
+                            SELECT id FROM consultas WHERE paciente_id IN (SELECT paciente_id FROM pacientes_fantasma)
+                        ) AND id NOT IN (SELECT graduacion_id FROM detalle_ventas WHERE graduacion_id IS NOT NULL);
 
-                        string folio = $"{v.numero_nota}{v.numero_nota_sufijo}";
+                        DELETE FROM consultas WHERE paciente_id IN (SELECT paciente_id FROM pacientes_fantasma)
+                        AND id NOT IN (SELECT consulta_id FROM ventas WHERE consulta_id IS NOT NULL);
 
-                        // Buscar si la venta EXACTA (folio + paciente) existe
-                        var existe = await pgConn.QueryFirstOrDefaultAsync<Guid?>(
-                            "SELECT id FROM ventas WHERE folio_fisico = @Folio AND paciente_id = @Pid LIMIT 1",
-                            new { Folio = folio, Pid = pId }
-                        );
+                        -- 5. Borrar al paciente fantasma
+                        DELETE FROM pacientes WHERE id IN (SELECT paciente_id FROM pacientes_fantasma)
+                        AND id NOT IN (SELECT paciente_id FROM detalle_ventas WHERE paciente_id IS NOT NULL);
 
-                        if (!existe.HasValue)
-                        {
-                            // RESTAURAR VENTA
-                            Guid nuevaVentaId = Guid.NewGuid();
-                            await pgConn.ExecuteAsync(@"INSERT INTO ventas (id, paciente_id, folio_fisico, fecha, total_venta, estado, observaciones_generales) 
-                                VALUES (@Id, @Pid, @Fol, @Fech, @Tot, @Est, @Not)",
-                                new { Id = nuevaVentaId, Pid = pId, Fol = folio, Fech = (DateTime)v.fecha_venta, Tot = (decimal)v.costo_total, Est = v.estado_pago?.ToString().ToLower(), Not = v.observaciones_venta?.ToString() ?? "" });
-                            
-                            // RESTAURAR ABONOS DE ESA VENTA
-                            var abonos = await mariaConn.QueryAsync<dynamic>("SELECT * FROM abonos WHERE id_venta = @Id", new { Id = v.id_venta });
-                            foreach (var a in abonos)
-                            {
-                                await pgConn.ExecuteAsync(@"INSERT INTO abonos (id, venta_id, monto, metodo_pago, fecha_pago) 
-                                    VALUES (@Id, @Vid, @Mon, @Met, @Fech)",
-                                    new { Id = Guid.NewGuid(), Vid = nuevaVentaId, Mon = (decimal)a.monto, Met = a.metodo_pago?.ToString() ?? "Efectivo", Fech = (DateTime)(a.fecha ?? DateTime.UtcNow) });
-                            }
-                            restauradas++;
-                        }
-                    }
-                    Console.WriteLine($"   -> Ventas restauradas correctamente: {restauradas}");
+                        -- Devolver contadores
+                        SELECT 
+                            (SELECT count(*) FROM clones) as VentasBorradas,
+                            (SELECT count(*) FROM pacientes_fantasma) as PacientesBorrados;
+
+                        DROP TABLE clones;
+                        DROP TABLE pacientes_fantasma;
+                    ";
+
+                    var result = await pgConn.QuerySingleAsync<dynamic>(sqlLimpieza);
+                    Console.WriteLine($"   -> Notas duplicadas borradas: {result.ventasborradas}");
+                    Console.WriteLine($"   -> Pacientes fantasma borrados: {result.pacientesborrados}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[ERROR] Falló la restauración en {config.Schema}: {ex.Message}");
+                    Console.WriteLine($"[ERROR] Falló la limpieza en {esquema}: {ex.Message}");
                 }
             }
 
             Console.WriteLine("\n=================================================");
-            Console.WriteLine(" RESTAURACION COMPLETADA ");
+            Console.WriteLine(" LIMPIEZA COMPLETADA - VERIFICA TUS VENTAS ");
             Console.WriteLine("=================================================");
         }
     }

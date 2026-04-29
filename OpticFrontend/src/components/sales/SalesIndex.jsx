@@ -15,6 +15,10 @@ const SalesIndex = ({ onNavigate }) => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     
+    // Range Filter State
+    const [startFolio, setStartFolio] = useState('');
+    const [endFolio, setEndFolio] = useState('');
+    
     // Modals
     const [showCounterModal, setShowCounterModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -30,8 +34,13 @@ const SalesIndex = ({ onNavigate }) => {
             fetchSalesByYear(selectedYear);
         } else if (activeTab === 'mostrador') {
             fetchCounterSales();
-        } else {
+        } else if (activeTab === 'consultations') {
             fetchConsultationSales();
+        } else if (activeTab === 'descending') {
+            fetchDescendingSales();
+        } else if (activeTab === 'range') {
+            if (startFolio && endFolio) fetchRangeSales(startFolio, endFolio);
+            else setSales([]);
         }
     }, [activeTab, selectedYear]);
 
@@ -84,11 +93,40 @@ const SalesIndex = ({ onNavigate }) => {
         }
     };
 
+    const fetchDescendingSales = async () => {
+        setLoading(true);
+        try {
+            const data = await apiClient.get('/api/sales/descending');
+            setSales(data || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchRangeSales = async (start, end) => {
+        setLoading(true);
+        try {
+            const data = await apiClient.get(`/api/sales/range?start=${start}&end=${end}`);
+            setSales(data || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchTerm) {
             if (activeTab === 'notas') fetchSalesByYear(selectedYear);
             else if (activeTab === 'mostrador') fetchCounterSales();
+            else if (activeTab === 'descending') fetchDescendingSales();
+            else if (activeTab === 'range') {
+                if (startFolio && endFolio) fetchRangeSales(startFolio, endFolio);
+                else setSales([]);
+            }
             else fetchConsultationSales();
             return;
         }
@@ -179,24 +217,36 @@ const SalesIndex = ({ onNavigate }) => {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="sales-tabs">
+            <div className="sales-tabs flex-wrap">
                 <button 
                     className={`tab-btn ${activeTab === 'notas' ? 'active' : ''}`}
                     onClick={() => setActiveTab('notas')}
                 >
-                    Notas de Venta (Física)
+                    Notas de Venta
+                </button>
+                <button 
+                    className={`tab-btn ${activeTab === 'descending' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('descending')}
+                >
+                    Descendente
+                </button>
+                <button 
+                    className={`tab-btn ${activeTab === 'range' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('range')}
+                >
+                    Rango de Folios
                 </button>
                 <button 
                     className={`tab-btn ${activeTab === 'mostrador' ? 'active' : ''}`}
                     onClick={() => setActiveTab('mostrador')}
                 >
-                    Ventas de Mostrador (Libreta)
+                    Mostrador
                 </button>
                 <button 
                     className={`tab-btn ${activeTab === 'consultations' ? 'active' : ''}`}
                     onClick={() => setActiveTab('consultations')}
                 >
-                    Consultas y Otros
+                    Consultas
                 </button>
             </div>
 
@@ -216,31 +266,75 @@ const SalesIndex = ({ onNavigate }) => {
             )}
 
             {/* Search Filter */}
-            <div className="sales-filters card mb-6">
-                <form onSubmit={handleSearch} className="flex gap-4">
-                    <input 
-                        type="text" 
-                        placeholder="Buscar folio en toda la categoría..." 
-                        className="form-input flex-1"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <button type="submit" className="btn-secondary">Buscar</button>
-                    <button 
-                        type="button" 
-                        className="btn-icon" 
-                        onClick={() => {
-                            setSearchTerm(''); 
-                            if (activeTab === 'notas') fetchSalesByYear(selectedYear);
-                            else if (activeTab === 'mostrador') fetchCounterSales();
-                            else fetchConsultationSales();
-                        }}
-                        title="Limpiar"
-                    >
-                        🔄
-                    </button>
-                </form>
-            </div>
+            {activeTab !== 'range' && (
+                <div className="sales-filters card mb-6">
+                    <form onSubmit={handleSearch} className="flex gap-4">
+                        <input 
+                            type="text" 
+                            placeholder="Buscar folio en toda la categoría..." 
+                            className="form-input flex-1"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button type="submit" className="btn-secondary">Buscar</button>
+                        <button 
+                            type="button" 
+                            className="btn-icon" 
+                            onClick={() => {
+                                setSearchTerm(''); 
+                                if (activeTab === 'notas') fetchSalesByYear(selectedYear);
+                                else if (activeTab === 'mostrador') fetchCounterSales();
+                                else if (activeTab === 'descending') fetchDescendingSales();
+                                else fetchConsultationSales();
+                            }}
+                            title="Limpiar"
+                        >
+                            🔄
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {/* Range Filter */}
+            {activeTab === 'range' && (
+                <div className="sales-filters card mb-6">
+                    <form onSubmit={(e) => { e.preventDefault(); fetchRangeSales(startFolio, endFolio); }} className="flex gap-4 items-end">
+                        <div className="flex-1">
+                            <label className="block text-sm text-slate-500 mb-1">Folio Inicial (ej. 0001)</label>
+                            <input 
+                                type="text" 
+                                className="form-input w-full"
+                                value={startFolio}
+                                onChange={(e) => setStartFolio(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-sm text-slate-500 mb-1">Folio Final (ej. 0100)</label>
+                            <input 
+                                type="text" 
+                                className="form-input w-full"
+                                value={endFolio}
+                                onChange={(e) => setEndFolio(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ padding: '0.75rem 1.5rem' }}>Filtrar</button>
+                        <button 
+                            type="button" 
+                            className="btn-icon" 
+                            onClick={() => {
+                                setStartFolio(''); 
+                                setEndFolio('');
+                                setSales([]);
+                            }}
+                            title="Limpiar"
+                        >
+                            🔄
+                        </button>
+                    </form>
+                </div>
+            )}
 
             {loading ? (
                 <div className="loading-container"><div className="loader"></div></div>
@@ -255,8 +349,8 @@ const SalesIndex = ({ onNavigate }) => {
                                 <th>Fecha</th>
                                 <th>{activeTab === 'mostrador' ? 'Concepto' : 'Paciente / Motivo'}</th>
                                 <th>Total</th>
-                                {activeTab !== 'mostrador' && <th>Saldo</th>}
-                                <th>Acciones</th>
+                                {activeTab !== 'mostrador' && activeTab !== 'descending' && activeTab !== 'range' && <th>Saldo</th>}
+                                {activeTab !== 'descending' && activeTab !== 'range' && <th>Acciones</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -301,31 +395,33 @@ const SalesIndex = ({ onNavigate }) => {
                                             )}
                                         </td>
                                         <td className="font-mono">{formatCurrency(sale.totalVenta)}</td>
-                                        {activeTab !== 'mostrador' && (
+                                        {activeTab !== 'mostrador' && activeTab !== 'descending' && activeTab !== 'range' && (
                                             <td className={`font-bold ${sale.saldoPendiente > 0 ? 'text-danger' : 'text-success'}`}>
                                                 {formatCurrency(sale.saldoPendiente)}
                                             </td>
                                         )}
-                                        <td>
-                                            <div className="flex gap-2">
-                                                {sale.estado !== 'Cancelada' && (
+                                        {activeTab !== 'descending' && activeTab !== 'range' && (
+                                            <td>
+                                                <div className="flex gap-2">
+                                                    {sale.estado !== 'Cancelada' && (
+                                                        <button 
+                                                            className="btn-icon" 
+                                                            title="Gestionar Abonos / Pagos"
+                                                            onClick={() => onNavigate('sales-details', { saleId: sale.id })}
+                                                        >
+                                                            💳
+                                                        </button>
+                                                    )}
                                                     <button 
                                                         className="btn-icon" 
-                                                        title="Gestionar Abonos / Pagos"
-                                                        onClick={() => onNavigate('sales-details', { saleId: sale.id })}
+                                                        title="Eliminar"
+                                                        onClick={() => onNavigate('sale-delete', { saleId: sale.id })}
                                                     >
-                                                        💳
+                                                        🗑️
                                                     </button>
-                                                )}
-                                                <button 
-                                                    className="btn-icon" 
-                                                    title="Eliminar"
-                                                    onClick={() => onNavigate('sale-delete', { saleId: sale.id })}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </td>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))
                             ) : (
