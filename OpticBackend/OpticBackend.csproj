@@ -6,6 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="MigrationTool\**" />
+    <Content Remove="MigrationTool\**" />
+    <EmbeddedResource Remove="MigrationTool\**" />
+    <None Remove="MigrationTool\**" />
+  </ItemGroup>
+
  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
