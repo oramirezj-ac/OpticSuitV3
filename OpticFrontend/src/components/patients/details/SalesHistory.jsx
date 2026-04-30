@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
-import { formatCurrency } from '../../../utils/formatUtils';
+import { formatCurrency, formatFolioDisplay } from '../../../utils/formatUtils';
 
 const SalesHistory = ({ sales, patientId, loading, onNavigate, onSelectSale, onDeleteSale, defaultDate }) => {
     return (
@@ -41,7 +41,7 @@ const SalesHistory = ({ sales, patientId, loading, onNavigate, onSelectSale, onD
                                     const isPaid = s.saldoPendiente <= 0.1;
                                     return (
                                         <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0">
-                                            <td className="p-3 font-mono text-slate-600">{s.folioFisico || 'S/F'}</td>
+                                            <td className="p-3 font-mono text-slate-600">{formatFolioDisplay(s.folioFisico) || 'S/F'}</td>
                                             <td className="p-3 text-slate-700">{formatDateLong(s.fecha)}</td>
                                             <td className="p-3 font-medium text-slate-800">{formatCurrency(s.totalVenta)}</td>
                                             <td className={`p-3 font-bold ${isPaid ? 'text-success' : 'text-danger'}`}>

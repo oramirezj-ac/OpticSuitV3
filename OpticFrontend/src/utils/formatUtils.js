@@ -66,3 +66,17 @@ export const formatCurrency = (amount, withDecimals = false) => {
         maximumFractionDigits: withDecimals ? 2 : 0
     }).format(rounded);
 };
+
+/**
+ * Format a folio for display by stripping the trailing 'D' or '-Dn' if present,
+ * to hide duplicate markers from the UI.
+ * 
+ * @param {string} folio 
+ * @returns {string} Formatted folio
+ */
+export const formatFolioDisplay = (folio) => {
+    if (!folio) return '';
+    let displayFolio = String(folio);
+    // Remove trailing '-D', 'D', '-D1', 'D2', etc.
+    return displayFolio.replace(/-?D\d*$/i, '');
+};

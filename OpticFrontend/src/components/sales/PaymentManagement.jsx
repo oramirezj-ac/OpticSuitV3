@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
-import { formatCurrency } from '../../utils/formatUtils';
+import { formatCurrency, formatFolioDisplay } from '../../utils/formatUtils';
 import { formatDateLong } from '../../utils/dateUtils';
 import EditSaleModal from '../patients/details/EditSaleModal';
 import PaymentModal from '../patients/details/PaymentModal';
@@ -96,7 +96,7 @@ const PaymentManagement = ({ onNavigate, params }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FOLIO:</strong>
-                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{sale.folioFisico?.split('-D')[0] || 'N/A'}</div>
+                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{formatFolioDisplay(sale.folioFisico) || 'N/A'}</div>
                     </div>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>PACIENTE:</strong>

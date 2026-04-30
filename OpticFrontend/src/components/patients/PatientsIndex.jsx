@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PatientForm from './PatientForm';
 import './PatientsIndex.css';
 import './../users/UsersIndex.css'; // Reusing generic table styles
-import { formatPhoneNumber } from '../../utils/formatUtils';
+import { formatPhoneNumber, formatFolioDisplay } from '../../utils/formatUtils';
 import { formatDateLong } from '../../utils/dateUtils';
 import { getPatients, getAuditPatients, getAuditYears, deletePatient } from '../../services/patientApi';
 
@@ -263,7 +263,7 @@ const PatientsIndex = ({ onNavigate }) => {
                                                         A-{refNumber}
                                                     </td>
                                                     <td style={{ fontWeight: '600', color: '#1e293b' }}>
-                                                        {item.folioFisico}
+                                                        {formatFolioDisplay(item.folioFisico)}
                                                     </td>
                                                     <td style={{ fontWeight: '500' }}>
                                                         {item.nombreCompleto}

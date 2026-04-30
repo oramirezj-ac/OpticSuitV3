@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { authService } from '../../services/authService';
 import { formatDateLong } from '../../utils/dateUtils';
-import { formatCurrency } from '../../utils/formatUtils';
+import { formatCurrency, formatFolioDisplay } from '../../utils/formatUtils';
 import './SalesIndex.css';
 
 const SalesIndex = ({ onNavigate }) => {
@@ -190,7 +190,7 @@ const SalesIndex = ({ onNavigate }) => {
         if (!folio) return true;
         // Solo para tab de notas validamos que sea numérico de 4 dígitos
         if (activeTab !== 'notas') return true; 
-        const base = folio.split('-D')[0];
+        const base = formatFolioDisplay(folio);
         return base.length === 4 && !isNaN(base);
     };
 
@@ -198,7 +198,7 @@ const SalesIndex = ({ onNavigate }) => {
         if (sale.folioFisico?.startsWith('VM-')) return 'MOSTRADOR';
         if (sale.folioFisico?.startsWith('MED-')) return 'C. MÉDICA';
         if (sale.folioFisico?.startsWith('CL-')) return 'GRADUACIÓN';
-        return sale.folioFisico;
+        return formatFolioDisplay(sale.folioFisico);
     };
 
     // --- Render Components ---

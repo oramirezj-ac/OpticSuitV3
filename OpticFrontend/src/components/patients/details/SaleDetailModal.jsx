@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { formatDateLong } from '../../../utils/dateUtils';
-import { formatCurrency } from '../../../utils/formatUtils';
+import { formatCurrency, formatFolioDisplay } from '../../../utils/formatUtils';
 import { apiClient } from '../../../services/apiClient';
 import { getUsers } from '../../../services/userApi';
 import EditSaleModal from './EditSaleModal';
@@ -63,7 +63,7 @@ const SaleDetailModal = ({ sale, patientId, onClose, onSaleUpdated, onNavigate }
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FOLIO:</strong>
-                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{sale.folioFisico || 'N/A'}</div>
+                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{formatFolioDisplay(sale.folioFisico) || 'N/A'}</div>
                     </div>
                     <div>
                         <strong style={{ color: '#64748b', fontSize: '0.9em' }}>FECHA:</strong>
