@@ -226,10 +226,32 @@ namespace OpticBackend.Services
 
         public async Task<Sale?> UpdateSaleAsync(Guid id, UpdateSaleDto model)
         {
-            var sale = await _context.Ventas.Include(v => v.Comisiones).FirstOrDefaultAsync(v => v.Id == id);
+            var sale = await _context.Ventas
+                .Include(v => v.Comisiones)
+                .Include(v => v.Detalles)
+                .FirstOrDefaultAsync(v => v.Id == id);
             if (sale == null) return null;
 
             if (model.FolioFisico != null) sale.FolioFisico = model.FolioFisico;
+
+            if (model.UpdateGraduacion)
+            {
+                var mainDetail = sale.Detalles?.FirstOrDefault();
+                if (mainDetail != null)
+                {
+                    mainDetail.GraduacionId = model.GraduacionId;
+                }
+                else
+                {
+                    _context.DetalleVentas.Add(new SaleDetail
+                    {
+                        VentaId = sale.Id,
+                        GraduacionId = model.GraduacionId,
+                        PacienteId = sale.PacienteId,
+                        DescripcionManual = sale.ObservacionesGenerales ?? "Detalle auto-generado"
+                    });
+                }
+            }
             if (model.Fecha != null) 
             {
                 sale.Fecha = model.Fecha.Value.Kind == DateTimeKind.Unspecified 

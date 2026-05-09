@@ -24,5 +24,11 @@ namespace OpticBackend.Dtos.Sales
 
         [System.Text.Json.Serialization.JsonPropertyName("vendedoresIds")]
         public System.Collections.Generic.List<string>? VendedoresIds { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("graduacionId")]
+        public Guid? GraduacionId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("updateGraduacion")]
+        public bool UpdateGraduacion { get; set; }
     }
 }

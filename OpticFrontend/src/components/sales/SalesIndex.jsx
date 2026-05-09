@@ -130,9 +130,16 @@ const SalesIndex = ({ onNavigate }) => {
             else fetchConsultationSales();
             return;
         }
+
+        let formattedSearchTerm = searchTerm.trim();
+        if (/^\d{1,3}$/.test(formattedSearchTerm)) {
+            formattedSearchTerm = formattedSearchTerm.padStart(4, '0');
+            setSearchTerm(formattedSearchTerm);
+        }
+
         setLoading(true);
         try {
-            const data = await apiClient.get(`/api/sales/search?folio=${searchTerm}`);
+            const data = await apiClient.get(`/api/sales/search?folio=${formattedSearchTerm}`);
             setSales(data || []);
         } catch (err) {
             setError(err.message);
@@ -298,7 +305,20 @@ const SalesIndex = ({ onNavigate }) => {
             {/* Range Filter */}
             {activeTab === 'range' && (
                 <div className="sales-filters card mb-6">
-                    <form onSubmit={(e) => { e.preventDefault(); fetchRangeSales(startFolio, endFolio); }} className="flex gap-4 items-end">
+                    <form onSubmit={(e) => { 
+                        e.preventDefault(); 
+                        let s = startFolio.trim();
+                        let f = endFolio.trim();
+                        if (/^\d{1,3}$/.test(s)) {
+                            s = s.padStart(4, '0');
+                            setStartFolio(s);
+                        }
+                        if (/^\d{1,3}$/.test(f)) {
+                            f = f.padStart(4, '0');
+                            setEndFolio(f);
+                        }
+                        fetchRangeSales(s, f); 
+                    }} className="flex gap-4 items-end">
                         <div className="flex-1">
                             <label className="block text-sm text-slate-500 mb-1">Folio Inicial (ej. 0001)</label>
                             <input 

@@ -12,12 +12,12 @@ const SaleCreate = ({ onNavigate, params }) => {
     const [saleDate, setSaleDate] = useState(params?.defaultDate || new Date().toISOString().split('T')[0]);
     const [totalVenta, setTotalVenta] = useState(params?.totalAmount || '');
     const [observaciones, setObservaciones] = useState('');
-    
+
     // Commissions
     const [montoComisionTotal, setMontoComisionTotal] = useState(0);
     const [vendedoresSeleccionados, setVendedoresSeleccionados] = useState([]);
     const [availableVendors, setAvailableVendors] = useState([]);
-    
+
     // Graduations
     const [availableGraduations, setAvailableGraduations] = useState([]);
     const [selectedGraduationId, setSelectedGraduationId] = useState(params?.graduationId || '');
@@ -27,10 +27,10 @@ const SaleCreate = ({ onNavigate, params }) => {
     const [error, setError] = useState(null);
 
     const TAG_GROUPS = [
-        { label: 'Tipo', tags: ['Monofocal', 'Bifocal', 'Progresivo'] },
+        { label: 'Tipo', tags: ['Monofocal', 'Bifocal Flap Top', 'Bifocal Invisible', 'Progresivo'] },
         { label: 'Material', tags: ['CR-39', 'Hi-Index', 'Policarbonato', 'Trivex', 'Cristal'] },
         { label: 'Tratamiento', tags: ['Antireflejante', 'Fotocromatico', 'Anti blue ray', 'Transition'] },
-        { label: 'Armazón', tags: ['Armazón', 'Propio', 'De marca'] },
+        { label: 'Armazón', tags: ['Armazón', 'propio', 'de marca'] },
         { label: 'Contacto', tags: ['Lente de contacto'] }
     ];
 
@@ -53,7 +53,11 @@ const SaleCreate = ({ onNavigate, params }) => {
                     // Fetch consultations to get graduations for this patient
                     const consultations = await apiClient.get(`/api/consultations/patient/${params.patientId}`);
                     const allGraduations = consultations.reduce((acc, curr) => {
-                        return [...acc, ...(curr.graduaciones || [])];
+                        const gradsWithDate = (curr.graduaciones || []).map(g => ({
+                            ...g,
+                            fechaConsulta: curr.fecha
+                        }));
+                        return [...acc, ...gradsWithDate];
                     }, []);
                     setAvailableGraduations(allGraduations);
                 }
@@ -82,7 +86,7 @@ const SaleCreate = ({ onNavigate, params }) => {
             setError('El folio físico es obligatorio');
             return;
         }
-        
+
         setLoading(true);
         setError(null);
 
@@ -108,7 +112,7 @@ const SaleCreate = ({ onNavigate, params }) => {
             };
 
             const result = await apiClient.post('/api/sales', payload);
-            
+
             setShowSuccess(true);
             setTimeout(() => {
                 onNavigate('sales-details', { saleId: result.id, patientId: params?.patientId });
@@ -121,15 +125,17 @@ const SaleCreate = ({ onNavigate, params }) => {
         }
     };
 
-    const commissionPerVendor = vendedoresSeleccionados.length > 0 
+    const commissionPerVendor = vendedoresSeleccionados.length > 0
         ? (montoComisionTotal / vendedoresSeleccionados.length).toFixed(2)
         : 0;
 
     const getGraduationLabel = (g) => {
         const type = g.tipoGraduacion || 'Final';
+        const date = g.fechaConsulta ? new Date(g.fechaConsulta).toLocaleDateString('es-MX', { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric' }) : '';
+        const dateStr = date ? ` [${date}]` : '';
         const od = `OD ${g.odEsfera || 0} / ${g.odCilindro || 0}`;
         const oi = `OI ${g.oiEsfera || 0} / ${g.oiCilindro || 0}`;
-        return `[${type.toUpperCase()}] - ${od} | ${oi}`;
+        return `[${type.toUpperCase()}]${dateStr} - ${od} | ${oi}`;
     };
 
     return (
@@ -144,13 +150,13 @@ const SaleCreate = ({ onNavigate, params }) => {
                 {/* Left Column: Core Data */}
                 <div className="card">
                     <h3 className="text-lg font-bold mb-4 border-bottom pb-2">Información de la Nota</h3>
-                    
+
                     <div className="form-row-3">
                         <div className="form-group mb-0">
                             <label>Fecha de Venta *</label>
-                            <input 
-                                type="date" 
-                                className="form-input" 
+                            <input
+                                type="date"
+                                className="form-input"
                                 required
                                 value={saleDate}
                                 onChange={(e) => setSaleDate(e.target.value)}
@@ -159,45 +165,51 @@ const SaleCreate = ({ onNavigate, params }) => {
 
                         <div className="form-group mb-0">
                             <label>Folio Físico *</label>
-                            <input 
-                                type="text" 
-                                className="form-input" 
-                                placeholder="Ej. 0001" 
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Ej. 0001"
                                 required
                                 value={folioFisico}
                                 onChange={(e) => setFolioFisico(e.target.value)}
+                                onBlur={(e) => {
+                                    let val = e.target.value.trim();
+                                    if (/^\d{1,3}$/.test(val)) {
+                                        setFolioFisico(val.padStart(4, '0'));
+                                    }
+                                }}
                             />
                         </div>
 
                         <div className="form-group mb-0">
                             <label>Monto Total *</label>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 step="0.01"
-                                className="form-input" 
-                                placeholder="0.00" 
+                                className="form-input"
+                                placeholder="0.00"
                                 required
                                 value={totalVenta}
                                 onChange={(e) => setTotalVenta(e.target.value)}
-                                onWheel={(e) => e.target.blur()} 
+                                onWheel={(e) => e.target.blur()}
                             />
                         </div>
                     </div>
-                    
+
                     <div className="mb-4">
                         <p className="text-xs text-slate-400">Si el folio ya existe, el sistema gestionará el duplicado automáticamente.</p>
                     </div>
 
                     <div className="form-group">
                         <label>Observaciones de la Nota</label>
-                        <textarea 
-                            className="form-input" 
+                        <textarea
+                            className="form-input"
                             rows="4"
                             placeholder="Describa los detalles de la venta o use las herramientas de abajo..."
                             value={observaciones}
                             onChange={(e) => setObservaciones(e.target.value)}
                         />
-                        
+
                         <div className="observation-tools">
                             <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span>⚡ LLENADO RÁPIDO</span>
@@ -206,9 +218,9 @@ const SaleCreate = ({ onNavigate, params }) => {
                                 <div key={group.label} className="tag-group">
                                     <span className="tag-label">{group.label}:</span>
                                     {group.tags.map(tag => (
-                                        <button 
-                                            key={tag} 
-                                            type="button" 
+                                        <button
+                                            key={tag}
+                                            type="button"
                                             className="tag-btn"
                                             onClick={() => addObservationTag(tag)}
                                         >
@@ -224,10 +236,10 @@ const SaleCreate = ({ onNavigate, params }) => {
                 {/* Right Column: Commissions */}
                 <div className="card">
                     <h3 className="text-lg font-bold mb-6 border-bottom pb-4 text-slate-700">Vinculación y Comisiones</h3>
-                    
+
                     <div className="form-group">
                         <label>Vincular Graduación (Receta)</label>
-                        <select 
+                        <select
                             className="form-input"
                             value={selectedGraduationId}
                             onChange={(e) => setSelectedGraduationId(e.target.value)}
@@ -240,11 +252,11 @@ const SaleCreate = ({ onNavigate, params }) => {
                             ))}
                         </select>
                         <p className="text-xs text-slate-400 mt-1">Seleccione la graduación que se usará para esta venta.</p>
-                        
+
                         {selectedGraduationId && (
                             <div className="mt-4 animate-slide-up">
-                                <GraduationCard 
-                                    graduation={availableGraduations.find(g => g.id === selectedGraduationId)} 
+                                <GraduationCard
+                                    graduation={availableGraduations.find(g => g.id === selectedGraduationId)}
                                     title="Vista Previa de la Receta"
                                 />
                             </div>
@@ -253,10 +265,10 @@ const SaleCreate = ({ onNavigate, params }) => {
 
                     <div className="form-group">
                         <label>Monto de Comisión Total</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             step="0.01"
-                            className="form-input" 
+                            className="form-input"
                             placeholder="Ej. 100.00"
                             value={montoComisionTotal}
                             onChange={(e) => setMontoComisionTotal(e.target.value)}
@@ -270,8 +282,8 @@ const SaleCreate = ({ onNavigate, params }) => {
                         <div className="vendor-list" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
                             {availableVendors.map(v => (
                                 <div key={v.id} className="flex items-center gap-2 mb-2 p-2 rounded hover:bg-slate-50 cursor-pointer" onClick={() => toggleVendor(v.id)}>
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         checked={vendedoresSeleccionados.includes(v.id)}
                                         readOnly
                                     />
@@ -298,16 +310,16 @@ const SaleCreate = ({ onNavigate, params }) => {
                 </div>
 
                 <div className="md:col-span-2 flex justify-end">
-                    <button 
-                        type="submit" 
-                        className="btn-primary" 
+                    <button
+                        type="submit"
+                        className="btn-primary"
                         style={{ padding: '15px 40px', fontSize: '1.1rem' }}
                         disabled={loading}
                     >
                         {loading ? 'Guardando...' : 'Guardar Venta y Pasar a Abonos ➔'}
                     </button>
                 </div>
-                
+
                 {error && <div className="md:col-span-2 alert alert-danger">{error}</div>}
             </form>
         </div>

@@ -8,7 +8,7 @@ import { getPatients, getAuditPatients, getAuditYears, deletePatient } from '../
 
 const PatientsIndex = ({ onNavigate }) => {
     // Tab State: 'recent', 'search', 'all', 'audit'
-    const [activeTab, setActiveTab] = useState('recent');
+    const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('patientsActiveTab') || 'recent');
 
     // Data State
     const [patients, setPatients] = useState([]);
@@ -16,9 +16,9 @@ const PatientsIndex = ({ onNavigate }) => {
     const [error, setError] = useState(null);
 
     // Pagination & Search State
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(() => parseInt(sessionStorage.getItem('patientsPage')) || 1);
     const [totalPages, setTotalPages] = useState(1);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem('patientsSearchTerm') || '');
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
@@ -28,6 +28,13 @@ const PatientsIndex = ({ onNavigate }) => {
     const [auditYear, setAuditYear] = useState('');
     const [auditLetter, setAuditLetter] = useState('');
     const [availableYears, setAvailableYears] = useState([]);
+
+    // Sync state to sessionStorage
+    useEffect(() => {
+        sessionStorage.setItem('patientsActiveTab', activeTab);
+        sessionStorage.setItem('patientsPage', page.toString());
+        sessionStorage.setItem('patientsSearchTerm', searchTerm);
+    }, [activeTab, page, searchTerm]);
 
     const fetchPatients = useCallback(async (currentTab, currentPage, search) => {
         setLoading(true);

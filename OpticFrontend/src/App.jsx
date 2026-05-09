@@ -46,6 +46,9 @@ function App() {
   const handleLogout = () => {
     console.log('👋 [Auth] Cerrando sesión...');
     authService.clearAuth();
+    sessionStorage.removeItem('patientsActiveTab');
+    sessionStorage.removeItem('patientsPage');
+    sessionStorage.removeItem('patientsSearchTerm');
     setIsLoggedIn(false);
     setCurrentPage('dashboard');
   };
@@ -60,6 +63,12 @@ function App() {
   }, 60);
 
   const handleNavigate = (page, params = {}) => {
+    // Si se hace clic directo en el menú (reset) o se cambia de módulo principal, limpiamos la búsqueda de pacientes
+    if (params.reset || ['dashboard', 'sales', 'consultations', 'users', 'customization'].includes(page)) {
+        sessionStorage.removeItem('patientsActiveTab');
+        sessionStorage.removeItem('patientsPage');
+        sessionStorage.removeItem('patientsSearchTerm');
+    }
     setCurrentPage(page);
     setNavigationParams(params);
   };

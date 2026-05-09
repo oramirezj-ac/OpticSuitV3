@@ -24,7 +24,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                             <a
                                 href="#"
                                 className={activePage === 'dashboard' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}
+                                onClick={(e) => { e.preventDefault(); onNavigate('dashboard', { reset: true }); }}
                             >
                                 <span className="icon">🏠</span> Dashboard
                             </a>
@@ -33,7 +33,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                             <a
                                 href="#"
                                 className={activePage === 'patients' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('patients'); }}
+                                onClick={(e) => { e.preventDefault(); onNavigate('patients', { reset: true }); }}
                             >
                                 <span className="icon">👥</span> Pacientes
                             </a>
@@ -42,7 +42,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                             <a
                                 href="#"
                                 className={activePage === 'consultations' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('consultations'); }}
+                                onClick={(e) => { e.preventDefault(); onNavigate('consultations', { reset: true }); }}
                             >
                                 <span className="icon">🩺</span> Consultas
                             </a>
@@ -51,7 +51,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                             <a
                                 href="#"
                                 className={activePage === 'sales' ? 'active' : ''}
-                                onClick={(e) => { e.preventDefault(); onNavigate('sales'); }}
+                                onClick={(e) => { e.preventDefault(); onNavigate('sales', { reset: true }); }}
                             >
                                 <span className="icon">💰</span> Ventas
                             </a>
@@ -64,7 +64,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                                     <a
                                         href="#"
                                         className={activePage === 'users' ? 'active' : ''}
-                                        onClick={(e) => { e.preventDefault(); onNavigate('users'); }}
+                                        onClick={(e) => { e.preventDefault(); onNavigate('users', { reset: true }); }}
                                     >
                                         <span className="icon">⚙️</span> Usuarios
                                     </a>
@@ -73,7 +73,7 @@ const Layout = ({ children, onLogout, activePage, onNavigate }) => {
                                     <a
                                         href="#"
                                         className={activePage === 'customization' ? 'active' : ''}
-                                        onClick={(e) => { e.preventDefault(); onNavigate('customization'); }}
+                                        onClick={(e) => { e.preventDefault(); onNavigate('customization', { reset: true }); }}
                                     >
                                         <span className="icon">🎨</span> Personalizar
                                     </a>

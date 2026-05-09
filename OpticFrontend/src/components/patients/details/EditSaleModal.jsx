@@ -26,20 +26,45 @@ const EditSaleModal = ({ sale, onClose, onSuccess }) => {
     });
 
     const [availableVendors, setAvailableVendors] = useState([]);
+    const [availableGraduations, setAvailableGraduations] = useState([]);
+    const [selectedGraduationId, setSelectedGraduationId] = useState(sale.detalles?.[0]?.graduacionId || '');
+    
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchVendors = async () => {
+        const fetchData = async () => {
             try {
                 const vendors = await getUsers();
                 setAvailableVendors(vendors || []);
+
+                const patientId = sale.pacienteId || sale.consulta?.pacienteId;
+                if (patientId) {
+                    const consultations = await apiClient.get(`/api/consultations/patient/${patientId}`);
+                    const allGraduations = consultations.reduce((acc, curr) => {
+                        const gradsWithDate = (curr.graduaciones || []).map(g => ({
+                            ...g,
+                            fechaConsulta: curr.fecha
+                        }));
+                        return [...acc, ...gradsWithDate];
+                    }, []);
+                    setAvailableGraduations(allGraduations);
+                }
             } catch (err) {
-                console.error("Error loading vendors:", err);
+                console.error("Error loading data for edit modal:", err);
             }
         };
-        fetchVendors();
-    }, []);
+        fetchData();
+    }, [sale]);
+
+    const getGraduationLabel = (g) => {
+        const type = g.tipoGraduacion || 'Final';
+        const date = g.fechaConsulta ? new Date(g.fechaConsulta).toLocaleDateString('es-MX', { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric' }) : '';
+        const dateStr = date ? ` [${date}]` : '';
+        const od = `OD ${g.odEsfera || 0} / ${g.odCilindro || 0}`;
+        const oi = `OI ${g.oiEsfera || 0} / ${g.oiCilindro || 0}`;
+        return `[${type.toUpperCase()}]${dateStr} - ${od} | ${oi}`;
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -74,7 +99,9 @@ const EditSaleModal = ({ sale, onClose, onSuccess }) => {
                 saldoPendiente: parseFloat(form.saldoPendiente),
                 observacionesGenerales: form.observacionesGenerales,
                 montoComisionTotal: parseFloat(form.montoComisionTotal || 0),
-                vendedoresIds: form.vendedoresIds
+                vendedoresIds: form.vendedoresIds,
+                updateGraduacion: true,
+                graduacionId: selectedGraduationId || null
             };
 
             const response = await apiClient.put(`/api/sales/${sale.id}`, payload);
@@ -176,6 +203,22 @@ const EditSaleModal = ({ sale, onClose, onSuccess }) => {
                                 onChange={handleChange}
                                 placeholder="Armazones, micas, marcas..."
                             />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="text-sm font-semibold text-slate-700 block mb-1">Graduación (Receta) Asociada</label>
+                            <select
+                                className="form-input w-full"
+                                value={selectedGraduationId}
+                                onChange={(e) => setSelectedGraduationId(e.target.value)}
+                            >
+                                <option value="">-- Sin graduación o Venta Directa --</option>
+                                {availableGraduations.map(g => (
+                                    <option key={g.id} value={g.id}>
+                                        {getGraduationLabel(g)}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
