@@ -20,7 +20,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<ISalesService, SalesService>(); // Register SalesService
+builder.Services.AddScoped<ISalesQueryService, OpticBackend.Services.Sales.SalesQueryService>();
+builder.Services.AddScoped<ISalesCommandService, OpticBackend.Services.Sales.SalesCommandService>();
+builder.Services.AddScoped<ISalesPaymentService, OpticBackend.Services.Sales.SalesPaymentService>();
 builder.Services.AddScoped<IPatientDuplicationService, PatientDuplicationService>(); // Patient duplication service
 builder.Services.AddScoped<IUserAuthorizationService, UserAuthorizationService>(); // User authorization service
 builder.Services.AddScoped<IReportingService, ReportingService>(); // Reporting service

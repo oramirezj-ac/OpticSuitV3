@@ -5,14 +5,14 @@ using OpticBackend.Dtos.Sales;
 using OpticBackend.Models;
 using OpticBackend.Services.Interfaces;
 
-namespace OpticBackend.Services
+namespace OpticBackend.Services.Sales
 {
-    public class SalesService : ISalesService
+    public class SalesCommandService : ISalesCommandService
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<SalesService> _logger;
+        private readonly ILogger<SalesCommandService> _logger;
 
-        public SalesService(ApplicationDbContext context, ILogger<SalesService> logger)
+        public SalesCommandService(ApplicationDbContext context, ILogger<SalesCommandService> logger)
         {
             _context = context;
             _logger = logger;
@@ -22,7 +22,6 @@ namespace OpticBackend.Services
         {
             if (string.IsNullOrEmpty(baseFolio)) return null;
 
-            // Busca el folio base o cualquier versión con sufijo -D
             var existingFolios = await _context.Ventas
                 .Where(v => v.FolioFisico == baseFolio || v.FolioFisico.StartsWith(baseFolio + "-D"))
                 .Select(v => v.FolioFisico)
@@ -33,7 +32,6 @@ namespace OpticBackend.Services
                 return baseFolio;
             }
 
-            // Si ya existe el base, buscar el número más alto de sufijo -D
             int maxSuffix = 0;
             foreach (var f in existingFolios)
             {
@@ -55,10 +53,8 @@ namespace OpticBackend.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Resolve Unique Folio (Internal suffixing for duplicates)
                 var uniqueFolio = await ResolveUniqueFolioAsync(model.FolioFisico);
 
-                // 2. Create Head Sale
                 var sale = new Sale
                 {
                     FolioFisico = uniqueFolio,
@@ -77,7 +73,6 @@ namespace OpticBackend.Services
                 _context.Ventas.Add(sale);
                 await _context.SaveChangesAsync();
 
-                // 3. Create Details
                 if (model.Detalles != null)
                 {
                     foreach (var det in model.Detalles)
@@ -98,7 +93,6 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 4. Create Initial Payments (Abonos)
                 if (model.AbonosIniciales != null)
                 {
                     foreach (var pay in model.AbonosIniciales)
@@ -118,7 +112,6 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 5. Create Commissions with Split Logic
                 if (model.VendedoresIds != null && model.VendedoresIds.Any() && model.MontoComisionTotal > 0)
                 {
                     int count = model.VendedoresIds.Count;
@@ -131,7 +124,7 @@ namespace OpticBackend.Services
                             VentaId = sale.Id,
                             UsuarioId = vendedorId,
                             MontoComision = montoPorVendedor,
-                            PuntosVenta = 0, // Opcional según lógica futura
+                            PuntosVenta = 0,
                             FechaRegistro = DateTime.UtcNow
                         };
                         _context.ComisionesVentas.Add(commission);
@@ -139,7 +132,6 @@ namespace OpticBackend.Services
                 }
                 else if (model.Comisiones != null && model.Comisiones.Any())
                 {
-                    // Backward compatibility / Explicit commissions
                     foreach (var com in model.Comisiones)
                     {
                         var commission = new SalesCommission
@@ -154,7 +146,6 @@ namespace OpticBackend.Services
                     }
                 }
 
-                // 6. Update parent items modification dates + auto-update FechaRegistro if sale is older
                 Guid? resolvedPacienteId = sale.PacienteId;
 
                 if (sale.ConsultaId.HasValue)
@@ -174,11 +165,10 @@ namespace OpticBackend.Services
                     {
                         pacienteRef.FechaActualizacion = DateTime.UtcNow;
 
-                        // Auto-update FechaRegistro if sale date is older
                         if (sale.Fecha.HasValue && sale.Fecha.Value < pacienteRef.FechaRegistro)
                         {
                             _logger.LogInformation(
-                                "📅 [SalesService] Updating FechaRegistro for patient {Id}: {Old} → {New}",
+                                "📅 [SalesCommandService] Updating FechaRegistro for patient {Id}: {Old} → {New}",
                                 pacienteRef.Id, pacienteRef.FechaRegistro, sale.Fecha.Value);
                             pacienteRef.FechaRegistro = sale.Fecha.Value;
                         }
@@ -194,34 +184,8 @@ namespace OpticBackend.Services
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error creating sale in service");
-                throw; // Re-throw to be handled by controller
+                throw;
             }
-        }
-
-        public async Task<Sale?> GetSaleByIdAsync(Guid id)
-        {
-            return await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .Include(v => v.Detalles)
-                .Include(v => v.Abonos)
-                .Include(v => v.Comisiones)
-                .FirstOrDefaultAsync(v => v.Id == id);
-        }
-
-        public async Task<IEnumerable<Sale>> GetSalesByPatientAsync(Guid patientId)
-        {
-            return await _context.Ventas
-                .Include(s => s.Detalles)
-                .Include(s => s.Abonos)
-                .Include(s => s.Comisiones)
-                .Include(s => s.Paciente)
-                .Include(s => s.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .Where(s => s.PacienteId == patientId || s.Consulta.PacienteId == patientId || s.Detalles.Any(d => d.PacienteId == patientId))
-                .OrderByDescending(s => s.Fecha)
-                .ToListAsync();
         }
 
         public async Task<Sale?> UpdateSaleAsync(Guid id, UpdateSaleDto model)
@@ -230,6 +194,7 @@ namespace OpticBackend.Services
                 .Include(v => v.Comisiones)
                 .Include(v => v.Detalles)
                 .FirstOrDefaultAsync(v => v.Id == id);
+            
             if (sale == null) return null;
 
             if (model.FolioFisico != null) sale.FolioFisico = model.FolioFisico;
@@ -262,16 +227,13 @@ namespace OpticBackend.Services
             if (model.SaldoPendiente != null) sale.SaldoPendiente = model.SaldoPendiente;
             if (model.ObservacionesGenerales != null) sale.ObservacionesGenerales = model.ObservacionesGenerales;
 
-            // Logica de Comisiones
             if (model.VendedoresIds != null)
             {
-                // Limpiar comisiones anteriores
                 if (sale.Comisiones != null && sale.Comisiones.Any())
                 {
                     _context.ComisionesVentas.RemoveRange(sale.Comisiones);
                 }
 
-                // Generar nuevas comisiones
                 if (model.VendedoresIds.Any() && model.MontoComisionTotal.HasValue && model.MontoComisionTotal.Value > 0)
                 {
                     int count = model.VendedoresIds.Count;
@@ -295,12 +257,19 @@ namespace OpticBackend.Services
             _context.Entry(sale).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return await GetSaleByIdAsync(id);
+            return await _context.Ventas
+                .Include(v => v.Paciente)
+                .Include(v => v.Consulta)
+                .ThenInclude(c => c.Paciente)
+                .Include(v => v.Detalles)
+                .Include(v => v.Abonos)
+                .Include(v => v.Comisiones)
+                .FirstOrDefaultAsync(v => v.Id == id);
         }
 
         public async Task<bool> DeleteSaleAsync(Guid id)
         {
-            _logger.LogInformation("🗑️ [SalesService] Iniciando proceso de eliminación para venta {Id}", id);
+            _logger.LogInformation("🗑️ [SalesCommandService] Iniciando proceso de eliminación para venta {Id}", id);
             
             var sale = await _context.Ventas
                 .Include(v => v.Detalles)
@@ -310,29 +279,25 @@ namespace OpticBackend.Services
 
             if (sale == null) 
             {
-                _logger.LogWarning("⚠️ [SalesService] Intento de eliminar venta inexistente {Id}", id);
+                _logger.LogWarning("⚠️ [SalesCommandService] Intento de eliminar venta inexistente {Id}", id);
                 return false;
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Limpiar hijos de forma robusta
                 if (sale.Abonos != null && sale.Abonos.Any())
                 {
-                    _logger.LogInformation("   - Eliminando {Count} abonos vinculados", sale.Abonos.Count);
                     _context.Abonos.RemoveRange(sale.Abonos);
                 }
 
                 if (sale.Detalles != null && sale.Detalles.Any())
                 {
-                    _logger.LogInformation("   - Eliminando {Count} detalles de venta", sale.Detalles.Count);
                     _context.DetalleVentas.RemoveRange(sale.Detalles);
                 }
 
                 if (sale.Comisiones != null && sale.Comisiones.Any())
                 {
-                    _logger.LogInformation("   - Eliminando {Count} comisiones vinculadas", sale.Comisiones.Count);
                     _context.ComisionesVentas.RemoveRange(sale.Comisiones);
                 }
 
@@ -340,150 +305,16 @@ namespace OpticBackend.Services
                 await _context.SaveChangesAsync();
                 
                 await transaction.CommitAsync();
-                _logger.LogInformation("✅ [SalesService] Venta {Id} eliminada exitosamente", id);
+                _logger.LogInformation("✅ [SalesCommandService] Venta {Id} eliminada exitosamente", id);
                 
                 return true;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "❌ [SalesService] Error al eliminar venta {Id}", id);
+                _logger.LogError(ex, "❌ [SalesCommandService] Error al eliminar venta {Id}", id);
                 throw;
             }
-        }
-
-        public async Task<IEnumerable<Sale>> GetRecentSalesAsync(int count = 20)
-        {
-            return await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .Include(v => v.Comisiones)
-                .OrderByDescending(v => v.Fecha)
-                .Take(count)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Sale>> SearchSalesByFolioAsync(string folio)
-        {
-            if (string.IsNullOrEmpty(folio)) return new List<Sale>();
-
-            // Regla: mostrar todas las notas que coincidan (duplicados incluidos)
-            return await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .Where(v => v.FolioFisico == folio || v.FolioFisico.StartsWith(folio + "-D"))
-                .OrderByDescending(v => v.Fecha)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<int>> GetSalesYearsAsync()
-        {
-            return await _context.Ventas
-                .Where(v => v.Fecha.HasValue && !(v.FolioFisico != null && v.FolioFisico.StartsWith("VM-")))
-                .Select(v => v.Fecha.Value.Year)
-                .Distinct()
-                .OrderByDescending(y => y)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Sale>> GetSalesByYearAsync(int year)
-        {
-            var sales = await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .Where(v => v.Fecha.HasValue && v.Fecha.Value.Year == year)
-                .ToListAsync();
-
-            // Filtrado manual en memoria para asegurar que los prefijos no se cuelen (Case-insensitive & Trim)
-            var filteredSales = sales.Where(v => {
-                if (string.IsNullOrEmpty(v.FolioFisico)) return true;
-                string folio = v.FolioFisico.ToUpper().Trim();
-                return !(folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-"));
-            }).ToList();
-
-            // Ordenamiento inteligente: PadLeft(4, '0') para folios numéricos de 4 dígitos
-            return filteredSales.OrderByDescending(v => {
-                if (string.IsNullOrEmpty(v.FolioFisico)) return "";
-                // Limpiar sufijo -D para el sorteo base
-                var baseFolio = v.FolioFisico.Split("-D")[0];
-                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
-            });
-        }
-
-        public async Task<IEnumerable<Sale>> GetDescendingSalesAsync()
-        {
-            var sales = await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .ToListAsync();
-
-            // Filtrado manual: Solo notas físicas
-            var filteredSales = sales.Where(v => {
-                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
-                string folio = v.FolioFisico.ToUpper().Trim();
-                return !(folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-"));
-            }).ToList();
-
-            return filteredSales.OrderByDescending(v => {
-                var baseFolio = v.FolioFisico.Split("-D")[0];
-                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
-            });
-        }
-
-        public async Task<IEnumerable<Sale>> GetSalesByRangeAsync(string startFolio, string endFolio)
-        {
-            var sales = await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .ToListAsync();
-
-            // Rellenamos a 4 dígitos para comparaciones léxicas robustas de texto numérico
-            string startPadded = (startFolio ?? "").PadLeft(4, '0');
-            string endPadded = (endFolio ?? "").PadLeft(4, '0');
-
-            var filteredSales = sales.Where(v => {
-                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
-                string folio = v.FolioFisico.ToUpper().Trim();
-                if (folio.StartsWith("VM-") || folio.StartsWith("MED-") || folio.StartsWith("CL-")) return false;
-
-                var baseFolio = folio.Split("-D")[0].PadLeft(4, '0');
-                
-                // Compare strings lexically since they are padded
-                return string.Compare(baseFolio, startPadded) >= 0 && string.Compare(baseFolio, endPadded) <= 0;
-            }).ToList();
-
-            return filteredSales.OrderByDescending(v => {
-                var baseFolio = v.FolioFisico.Split("-D")[0];
-                return baseFolio.PadLeft(4, '0') + (v.FolioFisico.Contains("-D") ? v.FolioFisico : "");
-            });
-        }
-
-        public async Task<IEnumerable<Sale>> GetCounterSalesAsync()
-        {
-            return await _context.Ventas
-                .Include(v => v.Paciente)
-                .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
-                .ToListAsync();
-        }
-        
-        public async Task<IEnumerable<Sale>> GetConsultationSalesAsync()
-        {
-            var sales = await _context.Ventas
-                .Include(v => v.Paciente)
-                .Include(v => v.Consulta)
-                .ThenInclude(c => c.Paciente)
-                .ToListAsync();
-
-            return sales.Where(v => {
-                if (string.IsNullOrEmpty(v.FolioFisico)) return false;
-                string folio = v.FolioFisico.ToUpper().Trim();
-                return folio.StartsWith("MED-") || folio.StartsWith("CL-");
-            }).OrderByDescending(v => v.Fecha);
         }
 
         public async Task<Sale?> CreateCounterSaleAsync(string concept, decimal amount, DateTime date, string userId)
@@ -491,7 +322,6 @@ namespace OpticBackend.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Generar Folio Interno VM-
                 var lastVm = await _context.Ventas
                     .Where(v => v.FolioFisico != null && v.FolioFisico.StartsWith("VM-"))
                     .OrderByDescending(v => v.FolioFisico)
@@ -505,7 +335,6 @@ namespace OpticBackend.Services
                 }
                 string newFolio = $"VM-{nextId:D4}";
 
-                // 2. Buscar o crear Paciente "Público General"
                 var genPatient = await _context.Pacientes.FirstOrDefaultAsync(p => p.Nombre == "Público General" && p.ApellidoPaterno == "Mostrador");
                 if (genPatient == null)
                 {
@@ -514,7 +343,6 @@ namespace OpticBackend.Services
                     await _context.SaveChangesAsync();
                 }
 
-                // 3. Crear Venta
                 var sale = new Sale
                 {
                     FolioFisico = newFolio,
@@ -530,7 +358,6 @@ namespace OpticBackend.Services
                 _context.Ventas.Add(sale);
                 await _context.SaveChangesAsync();
 
-                // 4. Crear Abono Automático (Pago Completo)
                 var payment = new Payment
                 {
                     VentaId = sale.Id,
@@ -569,80 +396,6 @@ namespace OpticBackend.Services
             _context.Ventas.Add(sale);
             await _context.SaveChangesAsync();
             return sale;
-        }
-
-        // --- ABONOS / PAGOS ---
-
-        private async Task RecalculateSaleBalanceAsync(Guid saleId)
-        {
-            var sale = await _context.Ventas
-                .Include(s => s.Abonos)
-                .FirstOrDefaultAsync(s => s.Id == saleId);
-
-            if (sale != null && sale.TotalVenta.HasValue)
-            {
-                decimal totalPagado = sale.Abonos?.Sum(a => a.Monto) ?? 0;
-                sale.SaldoPendiente = sale.TotalVenta.Value - totalPagado;
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task<Sale?> AddPaymentAsync(Guid saleId, CreatePaymentDto model)
-        {
-            var sale = await _context.Ventas.FindAsync(saleId);
-            if (sale == null) return null;
-
-            var payment = new Payment
-            {
-                VentaId = saleId,
-                Monto = model.Monto,
-                FechaPago = model.FechaPago.HasValue 
-                    ? (model.FechaPago.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(model.FechaPago.Value, DateTimeKind.Utc) : model.FechaPago.Value.ToUniversalTime())
-                    : DateTime.UtcNow,
-                MetodoPago = model.MetodoPago,
-                UsuarioId = model.UsuarioId
-            };
-
-            _context.Abonos.Add(payment);
-            await _context.SaveChangesAsync();
-
-            await RecalculateSaleBalanceAsync(saleId);
-            
-            return await GetSaleByIdAsync(saleId);
-        }
-
-        public async Task<Sale?> UpdatePaymentAsync(Guid saleId, Guid paymentId, UpdatePaymentDto model)
-        {
-            var payment = await _context.Abonos.FirstOrDefaultAsync(p => p.Id == paymentId && p.VentaId == saleId);
-            if (payment == null) return null;
-
-            if (model.Monto.HasValue) payment.Monto = model.Monto.Value;
-            if (model.FechaPago.HasValue) 
-            {
-                payment.FechaPago = model.FechaPago.Value.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(model.FechaPago.Value, DateTimeKind.Utc) 
-                    : model.FechaPago.Value;
-            }
-            if (model.MetodoPago != null) payment.MetodoPago = model.MetodoPago;
-
-            await _context.SaveChangesAsync();
-
-            await RecalculateSaleBalanceAsync(saleId);
-
-            return await GetSaleByIdAsync(saleId);
-        }
-
-        public async Task<Sale?> DeletePaymentAsync(Guid saleId, Guid paymentId)
-        {
-            var payment = await _context.Abonos.FirstOrDefaultAsync(p => p.Id == paymentId && p.VentaId == saleId);
-            if (payment == null) return null;
-
-            _context.Abonos.Remove(payment);
-            await _context.SaveChangesAsync();
-
-            await RecalculateSaleBalanceAsync(saleId);
-
-            return await GetSaleByIdAsync(saleId);
         }
     }
 }

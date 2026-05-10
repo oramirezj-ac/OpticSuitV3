@@ -1,13 +1,9 @@
 import React from 'react';
+import FormattedDiopter from './FormattedDiopter';
 import './GraduationCard.css';
 
 const GraduationCard = ({ graduation, showHeader = true, title = null }) => {
     if (!graduation) return null;
-
-    const renderValue = (val) => {
-        if (val === null || val === undefined || val === '') return '-';
-        return typeof val === 'number' ? val.toFixed(2) : val;
-    };
 
     return (
         <div className="graduation-card-container animate-fade-in">
@@ -22,17 +18,17 @@ const GraduationCard = ({ graduation, showHeader = true, title = null }) => {
 
                 {/* OD Row */}
                 <div className="grid-label od">OD</div>
-                <div className="grid-value">{renderValue(graduation.odEsfera)}</div>
-                <div className="grid-value">{renderValue(graduation.odCilindro)}</div>
-                <div className="grid-value">{graduation.odEje || '-'}</div>
-                <div className="grid-value">{renderValue(graduation.odAdicion)}</div>
+                <div className="grid-value"><FormattedDiopter value={graduation.odEsfera} type="esfera" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.odCilindro} type="cilindro" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.odEje} type="eje" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.odAdicion} type="adicion" /></div>
 
                 {/* OI Row */}
                 <div className="grid-label oi">OI</div>
-                <div className="grid-value">{renderValue(graduation.oiEsfera)}</div>
-                <div className="grid-value">{renderValue(graduation.oiCilindro)}</div>
-                <div className="grid-value">{graduation.oiEje || '-'}</div>
-                <div className="grid-value">{renderValue(graduation.oiAdicion)}</div>
+                <div className="grid-value"><FormattedDiopter value={graduation.oiEsfera} type="esfera" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.oiCilindro} type="cilindro" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.oiEje} type="eje" /></div>
+                <div className="grid-value"><FormattedDiopter value={graduation.oiAdicion} type="adicion" /></div>
             </div>
             
             {(graduation.detallesMontaje) && (

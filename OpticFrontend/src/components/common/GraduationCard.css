@@ -46,11 +46,11 @@
 }
 
 .grid-label.od {
-    color: #2563eb; /* Blue */
+    color: #000000; /* Black */
 }
 
 .grid-label.oi {
-    color: #16a34a; /* Green */
+    color: #000000; /* Black */
 }
 
 .grid-value {

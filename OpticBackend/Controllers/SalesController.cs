@@ -11,12 +11,20 @@ namespace OpticBackend.Controllers
     [ApiController]
     public class SalesController : ControllerBase
     {
-        private readonly ISalesService _salesService;
+        private readonly ISalesQueryService _queryService;
+        private readonly ISalesCommandService _commandService;
+        private readonly ISalesPaymentService _paymentService;
         private readonly ILogger<SalesController> _logger;
 
-        public SalesController(ISalesService salesService, ILogger<SalesController> logger)
+        public SalesController(
+            ISalesQueryService queryService, 
+            ISalesCommandService commandService, 
+            ISalesPaymentService paymentService, 
+            ILogger<SalesController> logger)
         {
-            _salesService = salesService;
+            _queryService = queryService;
+            _commandService = commandService;
+            _paymentService = paymentService;
             _logger = logger;
         }
 
@@ -26,14 +34,12 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var sale = await _salesService.CreateSaleAsync(model);
+                var sale = await _commandService.CreateSaleAsync(model);
                 return CreatedAtAction(nameof(GetSale), new { id = sale.Id }, sale);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating sale");
-                // Note: Detailed error messages should be avoided in production for security, 
-                // but kept here as requested for debugging context
                 return StatusCode(500, new { message = $"Error al crear la venta: {ex.Message} {ex.InnerException?.Message ?? ""}" });
             }
         }
@@ -43,19 +49,19 @@ namespace OpticBackend.Controllers
         [HttpGet("years")]
         public async Task<ActionResult<IEnumerable<int>>> GetSalesYears()
         {
-            return Ok(await _salesService.GetSalesYearsAsync());
+            return Ok(await _queryService.GetSalesYearsAsync());
         }
 
         [HttpGet("year/{year}")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByYear(int year)
         {
-            return Ok(await _salesService.GetSalesByYearAsync(year));
+            return Ok(await _queryService.GetSalesByYearAsync(year));
         }
 
         [HttpGet("descending")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetDescendingSales()
         {
-            return Ok(await _salesService.GetDescendingSalesAsync());
+            return Ok(await _queryService.GetDescendingSalesAsync());
         }
 
         [HttpGet("range")]
@@ -65,25 +71,25 @@ namespace OpticBackend.Controllers
             {
                 return BadRequest(new { message = "Se requieren los folios de inicio y fin" });
             }
-            return Ok(await _salesService.GetSalesByRangeAsync(start, end));
+            return Ok(await _queryService.GetSalesByRangeAsync(start, end));
         }
 
         [HttpGet("counter")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetCounterSales()
         {
-            return Ok(await _salesService.GetCounterSalesAsync());
+            return Ok(await _queryService.GetCounterSalesAsync());
         }
 
         [HttpGet("consultations")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetConsultationSales()
         {
-            return Ok(await _salesService.GetConsultationSalesAsync());
+            return Ok(await _queryService.GetConsultationSalesAsync());
         }
 
         [HttpPost("counter")]
         public async Task<ActionResult<Sale>> CreateCounterSale(CreateCounterSaleDto model)
         {
-            var sale = await _salesService.CreateCounterSaleAsync(model.Concept, model.Amount, model.Date, model.UserId ?? "");
+            var sale = await _commandService.CreateCounterSaleAsync(model.Concept, model.Amount, model.Date, model.UserId ?? "");
             if (sale == null) return StatusCode(500, new { message = "Error al crear la venta de mostrador" });
             return Ok(sale);
         }
@@ -91,7 +97,7 @@ namespace OpticBackend.Controllers
         [HttpPost("cancel-folio")]
         public async Task<ActionResult<Sale>> RegisterCancelledFolio(RegisterCancelledFolioDto model)
         {
-            var sale = await _salesService.RegisterCancelledFolioAsync(model.Folio, model.Date, model.UserId ?? "");
+            var sale = await _commandService.RegisterCancelledFolioAsync(model.Folio, model.Date, model.UserId ?? "");
             if (sale == null) return StatusCode(500, new { message = "Error al registrar el folio cancelado" });
             return Ok(sale);
         }
@@ -102,7 +108,7 @@ namespace OpticBackend.Controllers
         [HttpGet("recent")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetRecentSales([FromQuery] int count = 20)
         {
-            var sales = await _salesService.GetRecentSalesAsync(count);
+            var sales = await _queryService.GetRecentSalesAsync(count);
             return Ok(sales);
         }
 
@@ -110,7 +116,7 @@ namespace OpticBackend.Controllers
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Sale>>> SearchSales([FromQuery] string folio)
         {
-            var sales = await _salesService.SearchSalesByFolioAsync(folio);
+            var sales = await _queryService.SearchSalesByFolioAsync(folio);
             return Ok(sales);
         }
 
@@ -118,7 +124,7 @@ namespace OpticBackend.Controllers
         [HttpGet("patient/{patientId}")]
         public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByPatient(Guid patientId)
         {
-            var sales = await _salesService.GetSalesByPatientAsync(patientId);
+            var sales = await _queryService.GetSalesByPatientAsync(patientId);
             return Ok(sales);
         }
 
@@ -126,19 +132,20 @@ namespace OpticBackend.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Sale>> GetSale(Guid id)
         {
-            var sale = await _salesService.GetSaleByIdAsync(id);
+            var sale = await _queryService.GetSaleByIdAsync(id);
 
             if (sale == null) return NotFound();
 
             return Ok(sale);
         }
+        
         // PUT: api/sales/{id}
         [HttpPut("{id}")]
         public async Task<ActionResult<Sale>> UpdateSale(Guid id, UpdateSaleDto model)
         {
             try
             {
-                var sale = await _salesService.UpdateSaleAsync(id, model);
+                var sale = await _commandService.UpdateSaleAsync(id, model);
 
                 if (sale == null) return NotFound();
 
@@ -157,7 +164,7 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var result = await _salesService.DeleteSaleAsync(id);
+                var result = await _commandService.DeleteSaleAsync(id);
                 if (!result) return NotFound(new { message = "Venta no encontrada" });
 
                 return Ok(new { message = "Venta eliminada correctamente" });
@@ -177,7 +184,7 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var sale = await _salesService.AddPaymentAsync(saleId, model);
+                var sale = await _paymentService.AddPaymentAsync(saleId, model);
                 if (sale == null) return NotFound(new { message = "Venta no encontrada" });
                 return Ok(sale);
             }
@@ -194,7 +201,7 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var sale = await _salesService.UpdatePaymentAsync(saleId, paymentId, model);
+                var sale = await _paymentService.UpdatePaymentAsync(saleId, paymentId, model);
                 if (sale == null) return NotFound(new { message = "Venta o abono no encontrado" });
                 return Ok(sale);
             }
@@ -211,7 +218,7 @@ namespace OpticBackend.Controllers
         {
             try
             {
-                var sale = await _salesService.DeletePaymentAsync(saleId, paymentId);
+                var sale = await _paymentService.DeletePaymentAsync(saleId, paymentId);
                 if (sale == null) return NotFound(new { message = "Venta o abono no encontrado" });
                 return Ok(sale);
             }
