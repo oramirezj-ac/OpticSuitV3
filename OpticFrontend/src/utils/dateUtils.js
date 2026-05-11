@@ -52,16 +52,25 @@ export const calculateAgeFromDate = (dateString) => {
 };
 
 /**
- * Calcula una fecha de nacimiento aproximada a partir de la edad
+ * Calcula una fecha de nacimiento aproximada a partir de la edad y una fecha de referencia
  * @param {number} age - Edad en años
+ * @param {string|null} referenceDateString - Fecha de referencia (ej. fechaRegistro). Si es null, usa la fecha actual.
  * @returns {string} Fecha en formato YYYY-MM-DD
  */
-export const calculateDateFromAge = (age) => {
+export const calculateDateFromAge = (age, referenceDateString = null) => {
     if (!age || age < 0) return '';
 
-    const today = new Date();
-    const birthYear = today.getFullYear() - age;
-    const birthDate = new Date(birthYear, 0, 1); // 1 de enero del año calculado
+    let refYear;
+    if (referenceDateString) {
+        // Obtenemos el año en UTC para evitar problemas de zona horaria con fechas ingresadas
+        const refDate = new Date(referenceDateString);
+        refYear = !isNaN(refDate.getTime()) ? refDate.getUTCFullYear() : new Date().getFullYear();
+    } else {
+        refYear = new Date().getFullYear();
+    }
+
+    const birthYear = refYear - age;
+    const birthDate = new Date(Date.UTC(birthYear, 0, 1)); // 1 de enero del año calculado en UTC
 
     return formatDateForInput(birthDate.toISOString());
 };

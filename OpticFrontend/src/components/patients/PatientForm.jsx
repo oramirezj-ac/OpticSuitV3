@@ -55,7 +55,12 @@ const PatientForm = ({ patient, onClose, onSuccess, onNavigate }) => {
         if (name === 'fechaNacimiento') {
             newFormData.edad = calculateAgeFromDate(val);
         } else if (name === 'edad') {
-            newFormData.fechaNacimiento = calculateDateFromAge(val);
+            newFormData.fechaNacimiento = calculateDateFromAge(val, newFormData.fechaRegistro);
+        } else if (name === 'fechaRegistro') {
+            // Recalcular la fecha de nacimiento si cambia la fecha de registro y tenemos una edad
+            if (newFormData.edad) {
+                newFormData.fechaNacimiento = calculateDateFromAge(newFormData.edad, val);
+            }
         }
 
         setFormData(newFormData);
