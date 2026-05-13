@@ -11,6 +11,6 @@ namespace OpticBackend.Dtos.Consultations
         public decimal? CostoServicio { get; set; }
         public string? EstadoFinanciero { get; set; }
         public DateTime? Fecha { get; set; }
-        public Dictionary<string, string>? DetallesClinicos { get; set; }
+        public Dictionary<string, object>? DetallesClinicos { get; set; }
     }
 }

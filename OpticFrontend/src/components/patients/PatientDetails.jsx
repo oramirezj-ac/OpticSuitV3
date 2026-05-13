@@ -8,6 +8,7 @@ import ConsultationHistory from './details/ConsultationHistory';
 import SalesHistory from './details/SalesHistory';
 import MedicalCheckoutModal from './details/MedicalCheckoutModal';
 import ConsultationCreateModal from './details/ConsultationCreateModal';
+import VisualAcuityModal from '../consultations/VisualAcuityModal';
 import PatientForm from './PatientForm';
 import './PatientDetails.css';
 
@@ -29,6 +30,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
     const [selectedSale, setSelectedSale] = useState(null);
     const [checkoutConsultation, setCheckoutConsultation] = useState(null);
     const [consultationCreateType, setConsultationCreateType] = useState(null); // null = closed, 'consulta_lentes' or 'consulta_medica'
+    const [selectedVAConsultation, setSelectedVAConsultation] = useState(null); // Para el Modal de Agudeza Visual
     const [isEditing, setIsEditing] = useState(false);
 
     const handleCheckoutSuccess = () => {
@@ -121,6 +123,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                         onNavigate={onNavigate}
                         onDelete={handleDeleteConsultation}
                         onCreateConsultation={() => setConsultationCreateType('consulta_lentes')}
+                        onManageVisualAcuity={setSelectedVAConsultation}
                     />
                 )}
 
@@ -134,6 +137,7 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                         onCheckout={setCheckoutConsultation}
                         onDelete={handleDeleteConsultation}
                         onCreateConsultation={() => setConsultationCreateType('consulta_medica')}
+                        onManageVisualAcuity={setSelectedVAConsultation}
                     />
                 )}
 
@@ -179,6 +183,18 @@ const PatientDetails = ({ patientId, onBack, onNavigate, initialTab }) => {
                     onClose={() => setConsultationCreateType(null)}
                     onSuccess={handleConsultationSuccess}
                     onNavigateGraduations={handleNavigateGraduations}
+                />
+            )}
+
+            {/* VISUAL ACUITY MODAL */}
+            {selectedVAConsultation && (
+                <VisualAcuityModal
+                    consultation={selectedVAConsultation}
+                    onClose={() => setSelectedVAConsultation(null)}
+                    onSuccess={() => {
+                        setSelectedVAConsultation(null);
+                        refreshData();
+                    }}
                 />
             )}
 

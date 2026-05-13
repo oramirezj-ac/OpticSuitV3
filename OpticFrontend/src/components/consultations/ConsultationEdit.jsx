@@ -20,8 +20,10 @@ const ConsultationEdit = ({ onNavigate, params }) => {
         observaciones: '',
         diagnostico: '',
         tratamiento: '',
-        costoServicio: 0
+        costoServicio: 0,
+        agudezaVisual: null
     });
+    const [rawDetallesClinicos, setRawDetallesClinicos] = useState({});
 
     useEffect(() => {
         let isMounted = true;
@@ -56,17 +58,22 @@ const ConsultationEdit = ({ onNavigate, params }) => {
                 
                 let diag = '';
                 let treat = '';
+                let av = null;
+                let dcRaw = {};
                 if (data.detallesClinicos) {
                     try {
                         const dc = typeof data.detallesClinicos === 'string' 
                             ? JSON.parse(data.detallesClinicos) 
                             : data.detallesClinicos;
+                        dcRaw = dc;
                         diag = dc.diagnostico || '';
                         treat = dc.tratamiento || '';
+                        av = dc.agudezaVisual || null;
                     } catch (e) {
                         console.error("ConsultationEdit: Error parseando detallesClinicos", e);
                     }
                 }
+                setRawDetallesClinicos(dcRaw);
 
                 // Usamos split directamente para máxima compatibilidad si formatDateForInput fallara
                 const fechaInput = data.fecha ? data.fecha.split('T')[0] : '';
@@ -77,7 +84,8 @@ const ConsultationEdit = ({ onNavigate, params }) => {
                     observaciones: data.observaciones || '',
                     diagnostico: diag,
                     tratamiento: treat,
-                    costoServicio: data.costoServicio || 0
+                    costoServicio: data.costoServicio || 0,
+                    agudezaVisual: av
                 });
             } catch (err) {
                 if (!isMounted) return;
@@ -103,10 +111,20 @@ const ConsultationEdit = ({ onNavigate, params }) => {
         setError(null);
 
         try {
-            const detallesClinicos = tipoConsulta === 'consulta_medica' ? {
-                diagnostico: form.diagnostico,
-                tratamiento: form.tratamiento
-            } : {};
+            // Preservamos todo el JSON existente y sobrescribimos/agregamos lo nuevo
+            const detallesClinicos = {
+                ...rawDetallesClinicos,
+                ...(tipoConsulta === 'consulta_medica' ? {
+                    diagnostico: form.diagnostico,
+                    tratamiento: form.tratamiento
+                } : {}),
+            };
+            
+            if (form.agudezaVisual) {
+                detallesClinicos.agudezaVisual = form.agudezaVisual;
+            } else {
+                delete detallesClinicos.agudezaVisual;
+            }
 
             const payload = {
                 fecha: form.fecha ? new Date(form.fecha + 'T00:00:00Z').toISOString() : new Date().toISOString(),
@@ -196,7 +214,7 @@ const ConsultationEdit = ({ onNavigate, params }) => {
                         </div>
                     </div>
 
-                    {error && <div className="alert alert-danger mb-4">{error}</div>}
+                    {error && <div className="alert alert-danger mb-4 mt-4">{error}</div>}
 
                     <div className="form-actions mt-8 flex justify-end gap-4">
                         <button type="button" className="btn-secondary" onClick={() => params?.patientId ? onNavigate('patient-details', { patientId: params.patientId }) : onNavigate('consultations')}>Cancelar</button>
